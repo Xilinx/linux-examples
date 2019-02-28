@@ -1,0 +1,15 @@
+sdfec-interrupts Example Application
+====================================
+
+The example processor application is used to demonstrate how to configure
+the SD-FEC IP instance(s) for interrupt usage with the Linux SDFEC driver.
+SDFEC is set to work in Non-5G operational mode with LDPC coding.
+
+The example was tested and built with PETALINUX version 2019.1 for xilinx
+board zcu111.
+
+How to apply to a petalinux project
+===================================
+
+Simply copy folder sdfec-interrupts to a petalinux eg. from the root of the repo do:
+cp -r ./sd-fec-1.1/sdfec-interrupts <petalinux-proj root>/project-spec/meta-user/recipes-apps
