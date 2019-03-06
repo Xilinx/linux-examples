@@ -1,0 +1,25 @@
+sdfec-demo Example Application
+==============================
+
+The example processor application is used to set up and control the BER test
+HW and demonstrates how to configure and use the SD-FEC IP instance(s) using
+the Linux SDFEC driver.
+SDFEC is set to work in Non-5G operational mode with LDPC coding.
+
+The example was tested and built with PETALINUX version 2019.1 for xilinx
+board zcu111.
+
+
+How to apply, build and run the example APP in a petalinux project
+==================================================================
+1. Copy folder sdfec-demo to a petalinux eg. from the root of
+the repo do:
+cp -r ./sd-fec-1.1/sdfec-demo <petalinux-proj>/project-spec/meta-user/recipes-apps
+
+2. Build petalinux project and upload images to a target platform.
+
+3. Run the example APP as "sdfec-demo".
+
+4. The example APP runs to completion and returns:
+        0 on success
+        -1 on failure
