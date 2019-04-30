@@ -215,9 +215,11 @@ check_error:
 	/* Check for errors */
 	if(strcmp(err_msg, "") != 0) {
 		printf("ERROR: %s\n", err_msg);
+		printf("\nsdfec-multi-ldpc-codes: FAIL\n");
 		return -1;
 	}
 
+	printf("\nsdfec-multi-ldpc-codes: PASS\n");
 	return 0;
 }
 
