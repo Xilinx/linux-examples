@@ -212,12 +212,7 @@ int main(void)
 		goto close_devices;
 	}
 	print_status_xsdfec(&status);
-	if (status.state != XSDFEC_NEEDS_RESET) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Reset is not required on dev %s",
-			 FEC_DEC);
-	}
+
 	ret_val = get_stats_xsdfec(dec_fd, &stats);
 	if (ret_val != 0) {
 		snprintf(err_msg,
@@ -227,12 +222,6 @@ int main(void)
 		goto close_devices;
 	}
 	print_stats_xsdfec(&status, &stats);
-	if (stats.uecc_count == 0 && stats.isr_err_count == 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "No critial errors counted on dev %s",
-			 FEC_DEC);
-	}
 
 	ret_val = get_status_xsdfec(enc_fd, &status);
 	if (ret_val != 0) {
@@ -243,12 +232,7 @@ int main(void)
 		goto close_devices;
 	}
 	print_status_xsdfec(&status);
-	if (status.state != XSDFEC_NEEDS_RESET) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Reset is not required on dev %s",
-			 FEC_ENC);
-	}
+
 	ret_val = get_stats_xsdfec(enc_fd, &stats);
 	if (ret_val != 0) {
 		snprintf(err_msg,
@@ -258,12 +242,6 @@ int main(void)
 		goto close_devices;
 	}
 	print_stats_xsdfec(&status, &stats);
-	if (stats.uecc_count == 0 && stats.isr_err_count == 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "No critial errors counted on dev %s",
-			 FEC_ENC);
-	}
 
 	/* Clear the stats */
 	ret_val = clear_stats_xsdfec(dec_fd);
