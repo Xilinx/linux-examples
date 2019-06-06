@@ -350,6 +350,7 @@ int tstb_gpio_initialize(char* gpioid)
 	int expfd  = -1;
 	int dirfd  = -1;
 	char gpio_dirpath[50];
+	ssize_t unused __attribute__((unused));
 
 	expfd = open("/sys/class/gpio/export", O_WRONLY);
 	if (expfd < 0) {
@@ -357,7 +358,7 @@ int tstb_gpio_initialize(char* gpioid)
 		return expfd;
 	}
 
-	write(expfd, gpioid, 4);
+	unused = write(expfd, gpioid, 4);
 
 	/* Update the direction of the GPIO to be an output */
 	sprintf(gpio_dirpath, "/sys/class/gpio/gpio%s/direction", gpioid);
@@ -366,7 +367,7 @@ int tstb_gpio_initialize(char* gpioid)
 		return dirfd;
 	}
 
-	write(dirfd, "out", 4);
+	unused = write(dirfd, "out", 4);
 
 	close(dirfd);
 	close(expfd);
@@ -376,6 +377,7 @@ int tstb_gpio_initialize(char* gpioid)
 void tstb_gpio_release(char* gpioid)
 {
 	int unexpfd  = -1;
+	ssize_t unused __attribute__((unused));
 
 	unexpfd = open("/sys/class/gpio/unexport", O_WRONLY);
 	if (unexpfd < 0) {
@@ -384,7 +386,7 @@ void tstb_gpio_release(char* gpioid)
 			 "Cannot open GPIO to unexport it");
 	}
 
-	write(unexpfd, gpioid, 4);
+	unused = write(unexpfd, gpioid, 4);
 
 	close(unexpfd);
 }
@@ -393,6 +395,7 @@ void tstb_gpio_reset(char* gpioid)
 {
 	int valfd = -1;
 	char gpio_valpath[50];
+	ssize_t unused __attribute__((unused));
 
 	sprintf(gpio_valpath, "/sys/class/gpio/gpio%s/value", gpioid);
 	valfd = open(gpio_valpath, O_RDWR);
@@ -402,8 +405,8 @@ void tstb_gpio_reset(char* gpioid)
 			 "Cannot open GPIO value %s",
 			 gpioid);
 	}
-	write(valfd, "1", 2);
-	write(valfd, "0", 2);
+	unused = write(valfd, "1", 2);
+	unused = write(valfd, "0", 2);
 	close(valfd);
 }
 
@@ -418,7 +421,8 @@ void tstb_gpio_write_value(char* gpioid, char* val)
 		printf("Cannot open GPIO value\n");
 		exit(1);
 	}
-	write(valfd, val, 2);
+	if(-1 == write(valfd, val, 2))
+		printf("Write failed in %s line %d\n", __FUNCTION__, __LINE__);
 	close(valfd);
 }
 

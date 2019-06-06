@@ -399,8 +399,10 @@ static int get_user_param(char *param_name, char *param_format, void *param)
 	int ch;
 	char user_input[16];
 	int num_params_read;
+	char* unused __attribute__((unused));
+
 	printf("%s: ", param_name);
-	fgets(user_input, sizeof(user_input), stdin);
+	unused = fgets(user_input, sizeof(user_input), stdin);
 	num_params_read = sscanf(user_input, param_format, param);
 
 	tmp_ptr = strchr(user_input, '\n');
@@ -532,6 +534,7 @@ void demo_gpio_initialize(char* gpioid)
 	int expfd  = -1;
 	int dirfd  = -1;
 	char gpio_dirpath[50];
+	ssize_t unused __attribute__((unused));
 
 	expfd = open("/sys/class/gpio/export", O_WRONLY);
 	if (expfd < 0) {
@@ -539,7 +542,7 @@ void demo_gpio_initialize(char* gpioid)
 		exit(1);
 	}
 
-	write(expfd, gpioid, 4);
+	unused = write(expfd, gpioid, 4);
 
 	// Update the direction of the GPIO to be an output
 	sprintf(gpio_dirpath, "/sys/class/gpio/gpio%s/direction", gpioid);
@@ -549,7 +552,7 @@ void demo_gpio_initialize(char* gpioid)
 		exit(1);
 	}
 
-	write(dirfd, "out", 4);
+	unused = write(dirfd, "out", 4);
 
 	close(dirfd);
 	close(expfd);
@@ -558,6 +561,7 @@ void demo_gpio_initialize(char* gpioid)
 void demo_gpio_release(char* gpioid)
 {
 	int unexpfd  = -1;
+	ssize_t unused __attribute__((unused));
 
 	unexpfd = open("/sys/class/gpio/unexport", O_WRONLY);
 	if (unexpfd < 0) {
@@ -565,7 +569,7 @@ void demo_gpio_release(char* gpioid)
 		exit(1);
 	}
 
-	write(unexpfd, gpioid, 4);
+	unused = write(unexpfd, gpioid, 4);
 
 	close(unexpfd);
 }
@@ -574,6 +578,7 @@ void demo_gpio_reset(char* gpioid)
 {
 	int valfd = -1;
 	char gpio_valpath[50];
+	ssize_t unused __attribute__((unused));
 
 	sprintf(gpio_valpath, "/sys/class/gpio/gpio%s/value", gpioid);
 	valfd = open(gpio_valpath, O_RDWR);
@@ -581,8 +586,8 @@ void demo_gpio_reset(char* gpioid)
 		printf("Cannot open GPIO value\n");
 		exit(1);
 	}
-	write(valfd, "1", 2);
-	write(valfd, "0", 2);
+	unused = write(valfd, "1", 2);
+	unused = write(valfd, "0", 2);
 	close(valfd);
 }
 
@@ -590,6 +595,7 @@ void demo_gpio_write_value(char* gpioid, char* val)
 {
 	int valfd = -1;
 	char gpio_valpath[50];
+	ssize_t unused __attribute__((unused));
 
 	sprintf(gpio_valpath, "/sys/class/gpio/gpio%s/value", gpioid);
 	valfd = open(gpio_valpath, O_RDWR);
@@ -597,6 +603,6 @@ void demo_gpio_write_value(char* gpioid, char* val)
 		printf("Cannot open GPIO value\n");
 		exit(1);
 	}
-	write(valfd, val, 2);
+	unused = write(valfd, val, 2);
 	close(valfd);
 }
