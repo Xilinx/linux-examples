@@ -574,22 +574,3 @@ int get_sc_table_size(struct xsdfec_user_ldpc_code_params *user_params)
 	}
 	return sc_table_size;
 }
-
-#define print_ldpc_xsdfec(ldpc)                                                \
-	{                                                                      \
-		printf("---- LPDC Code %d ----\n", ldpc->code_id);             \
-		printf("\t n = 0x%x\n", ldpc->n);                              \
-		printf("\t k = 0x%x\n", ldpc->k);                              \
-		printf("\t psize = 0x%x\n", ldpc->psize);                      \
-		printf("\t nlayers = 0x%x\n", ldpc->nlayers);                  \
-		printf("\t nqc = 0x%x\n", ldpc->nqc);                          \
-		printf("\t sc_off = 0x%x\n", ldpc->sc_off);                    \
-		printf("\t la_off = 0x%x\n", ldpc->la_off);                    \
-		printf("\t qc_off = 0x%x\n", ldpc->qc_off);                    \
-		printf("sc_table[0] = 0x%x  sc_table[nlayers-1] = 0x%x\n",     \
-		       ldpc->sc_table[0], ldpc->sc_table[ldpc->nlayers - 1]);  \
-		printf("la_table[0] = 0x%x  la_table[nlayers-1] = 0x%x\n",     \
-		       ldpc->la_table[0], ldpc->la_table[ldpc->nlayers - 1]);  \
-		printf("qc_table[0] = 0x%x  qc_table[nqc-1] = 0x%x\n",         \
-		       ldpc->qc_table[0], ldpc->qc_table[ldpc->nqc - 1]);      \
-	}

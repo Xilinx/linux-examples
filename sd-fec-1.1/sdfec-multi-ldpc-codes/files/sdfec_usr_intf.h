@@ -258,10 +258,4 @@ int update_lpdc_table_offsets(
  */
 int get_sc_table_size(struct xsdfec_user_ldpc_code_params *user_params);
 
-/**
- * Print LDPC codes after being prepared by prepare_ldpc_code()
- * Used for debugging
- */
-void print_ldpc_xsdfec(struct xsdfec_ldpc_params *ldpc);
-
 #endif /* __SDFEC_USR_INTF_H__ */
