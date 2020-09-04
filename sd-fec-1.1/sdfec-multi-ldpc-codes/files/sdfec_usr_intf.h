@@ -74,7 +74,22 @@ typedef int32_t s32;
 typedef int8_t s8;
 typedef int16_t s16;
 
+typedef signed char __s8;
+typedef unsigned char __u8;
+typedef unsigned short __u16;
+typedef signed int __s32;
+typedef unsigned int __u32;
+
 #include "xilinx_sdfec.h"
+
+#define XSDFEC_SC_TABLE_DEPTH                                                  \
+	(XSDFEC_LDPC_SC_TABLE_ADDR_HIGH - XSDFEC_LDPC_SC_TABLE_ADDR_BASE)
+#define XSDFEC_LA_TABLE_DEPTH                                                  \
+	(XSDFEC_LDPC_LA_TABLE_ADDR_HIGH - XSDFEC_LDPC_LA_TABLE_ADDR_BASE)
+#define XSDFEC_QC_TABLE_DEPTH                                                  \
+	(XSDFEC_LDPC_QC_TABLE_ADDR_HIGH - XSDFEC_LDPC_QC_TABLE_ADDR_BASE)
+
+#define MAX_NUM_PAGES ((XSDFEC_QC_TABLE_DEPTH / PAGE_SIZE) + 1)
 
 /* User/App LDPC Config Data Stucture */
 struct xsdfec_user_ldpc_code_params {
@@ -153,7 +168,8 @@ int clear_stats_xsdfec(int fd);
  * Print the configuration queried in get_config_xsdfec() to
  * standard console
  */
-void print_config_xsdfec(struct xsdfec_config *config);
+void print_config_xsdfec(struct xsdfec_config *config,
+			const char *);
 
 /**
  * Query the driver for hardware information about the current
@@ -165,14 +181,15 @@ int get_status_xsdfec(int fd, struct xsdfec_status *status);
  * Print the stats queried in get_stats_xsdfec() to
  * standard console
  */
-void print_stats_xsdfec(struct xsdfec_status *status,
-			struct xsdfec_stats *stats);
+void print_stats_xsdfec(struct xsdfec_stats *stats,
+			const char *);
 
 /**
  * Print the status queried in get_status_xsdfec() to
  * standard console
  */
-void print_status_xsdfec(struct xsdfec_status *status);
+void print_status_xsdfec(struct xsdfec_status *status,
+			const char *);
 
 /**
  * Add LDPC code to the SDFEC device

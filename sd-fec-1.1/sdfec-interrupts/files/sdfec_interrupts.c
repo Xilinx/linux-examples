@@ -211,7 +211,7 @@ int main(void)
 			 FEC_DEC);
 		goto close_devices;
 	}
-	print_status_xsdfec(&status);
+	print_status_xsdfec(&status, FEC_DEC);
 
 	ret_val = get_stats_xsdfec(dec_fd, &stats);
 	if (ret_val != 0) {
@@ -221,7 +221,7 @@ int main(void)
 			 FEC_DEC);
 		goto close_devices;
 	}
-	print_stats_xsdfec(&status, &stats);
+	print_stats_xsdfec(&stats, FEC_DEC);
 
 	ret_val = get_status_xsdfec(enc_fd, &status);
 	if (ret_val != 0) {
@@ -231,7 +231,7 @@ int main(void)
 			 FEC_ENC);
 		goto close_devices;
 	}
-	print_status_xsdfec(&status);
+	print_status_xsdfec(&status, FEC_ENC);
 
 	ret_val = get_stats_xsdfec(enc_fd, &stats);
 	if (ret_val != 0) {
@@ -241,7 +241,7 @@ int main(void)
 			 FEC_ENC);
 		goto close_devices;
 	}
-	print_stats_xsdfec(&status, &stats);
+	print_stats_xsdfec(&stats, FEC_ENC);
 
 	/* Clear the stats */
 	ret_val = clear_stats_xsdfec(dec_fd);

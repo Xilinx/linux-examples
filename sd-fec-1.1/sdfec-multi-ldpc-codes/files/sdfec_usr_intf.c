@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -39,6 +40,8 @@
 #include <errno.h>
 /* Local Headers */
 #include "sdfec_usr_intf.h"
+
+#define LDPC_TABLE_DATA_SIZE (4)
 
 int open_xsdfec(char *dev_name)
 {
@@ -125,15 +128,15 @@ int get_status_xsdfec(int fd, struct xsdfec_status *status)
 	return 0;
 }
 
-void print_stats_xsdfec(struct xsdfec_status *status,
-			struct xsdfec_stats *stats)
+void print_stats_xsdfec(struct xsdfec_stats *stats,
+			const char *dev_name)
 {
 	if (!stats) {
 		fprintf(stderr, "Stats is NULL ... exiting\n");
 		return;
 	}
 
-	printf("-------- XSDFEC%d Stats ---------\n", status->fec_id);
+	printf("-------- %s Stats ---------\n", dev_name);
 	/* Print State */
 	printf("ISR Error Count               = %u\n", stats->isr_err_count);
 	printf("Correctable ECC Error Count   = %u\n", stats->cecc_count);
@@ -141,14 +144,15 @@ void print_stats_xsdfec(struct xsdfec_status *status,
 	printf("--------------------------------\n");
 }
 
-void print_status_xsdfec(struct xsdfec_status *status)
+void print_status_xsdfec(struct xsdfec_status *status,
+			const char *dev_name)
 {
 	if (!status) {
 		fprintf(stderr, "Status is NULL ... exiting\n");
 		return;
 	}
 
-	printf("-------- XSDFEC%d Status --------\n", status->fec_id);
+	printf("-------- %s Stats ---------\n", dev_name);
 	/* Print State */
 	if (status->state == XSDFEC_INIT)
 		printf(" State : Initialized\n");
@@ -165,14 +169,15 @@ void print_status_xsdfec(struct xsdfec_status *status)
 	printf("------------------------------\n");
 }
 
-void print_config_xsdfec(struct xsdfec_config *config)
+void print_config_xsdfec(struct xsdfec_config *config,
+			const char *dev_name)
 {
 	if (!config) {
 		fprintf(stderr, "Status is NULL ... exiting\n");
 		return;
 	}
 
-	printf("-------- XSDFEC%d Config --------\n", config->fec_id);
+	printf("-------- %s Stats ---------\n", dev_name);
 	/* Print Code */
 	if (config->code == XSDFEC_TURBO_CODE)
 		printf(" Code : Turbo\n");
@@ -313,22 +318,27 @@ int add_ldpc_xsdfec(int fd, struct xsdfec_ldpc_params *ldpc)
 	if (fd < 0) {
 		fprintf(stderr, "%s : Invalid file descriptor %d\n", __func__,
 			fd);
-		return -EBADF;
+		rval = -EBADF;
+		goto error;
 	}
 
 	if (!ldpc) {
 		fprintf(stderr, "%s : NULL status pointer, file desc.=%d\n",
 			__func__, fd);
-		return -EINVAL;
+		rval = -EINVAL;
+		goto error;
 	}
 
 	rval = ioctl(fd, XSDFEC_ADD_LDPC_CODE_PARAMS, ldpc);
 	if (rval < 0) {
 		fprintf(stderr, "%s : failed with %s\n", __func__,
 			strerror(errno));
-		return rval;
+		goto error;
 	}
-	return 0;
+	rval = 0;
+
+error:
+	return rval;
 }
 
 int set_default_config_xsdfec(int fd)
@@ -466,7 +476,10 @@ int prepare_ldpc_code(struct xsdfec_user_ldpc_code_params *user_params,
 		      struct xsdfec_ldpc_params *ldpc_params,
 		      unsigned int code_id)
 {
-	unsigned int itr;
+	unsigned int itr, ret;
+	int len;
+	size_t psize = getpagesize();
+
 	if (!user_params || !user_offsets || !ldpc_params) {
 		fprintf(stderr, "%s : Null input argument, error-%s\n",
 			__func__, strerror(errno));
@@ -497,19 +510,18 @@ int prepare_ldpc_code(struct xsdfec_user_ldpc_code_params *user_params,
 	ldpc_params->la_off = user_offsets->la_off;
 	ldpc_params->qc_off = user_offsets->qc_off;
 
-	if (!user_params->sc_table) {
-		fprintf(stderr, "%s : Null Param SC table, error-%s\n",
-			__func__, strerror(errno));
-		return -EINVAL;
-	}
-
 	/* Prepare SC Table */
-	if (get_sc_table_size(user_params) >
-	    (XSDFEC_LDPC_SC_TABLE_ADDR_HIGH - XSDFEC_LDPC_SC_TABLE_ADDR_BASE)) {
+	if (LDPC_TABLE_DATA_SIZE * get_sc_table_size(user_params) > XSDFEC_SC_TABLE_DEPTH) {
 		fprintf(stderr,
 			"%s : SC Table entries for code %d exceeds reg space\n",
 			__func__, code_id);
 		return -EINVAL;
+	}
+	/* Allocate a memory pages for SC table */
+	len = LDPC_TABLE_DATA_SIZE * get_sc_table_size(user_params);
+	if (posix_memalign((void **)&ldpc_params->sc_table, psize, len)) {
+		ret = -EINVAL;
+		goto error2;
 	}
 
 	for (itr = 0; itr < (unsigned int)get_sc_table_size(user_params);
@@ -518,12 +530,18 @@ int prepare_ldpc_code(struct xsdfec_user_ldpc_code_params *user_params,
 	}
 
 	/* Prepare LA Table */
-	if (user_params->nlayers >
-	    (XSDFEC_LDPC_LA_TABLE_ADDR_HIGH - XSDFEC_LDPC_LA_TABLE_ADDR_BASE)) {
+	if (LDPC_TABLE_DATA_SIZE * user_params->nlayers > XSDFEC_LA_TABLE_DEPTH) {
 		fprintf(stderr,
 			"%s : LA Table entries for code %d exceeds reg space\n",
 			__func__, code_id);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error2;
+	}
+	/* Allocate a memory pages for LA table */
+	len = LDPC_TABLE_DATA_SIZE * user_params->nlayers;
+	if (posix_memalign((void **)&ldpc_params->la_table, psize, len)) {
+		ret = -EINVAL;
+		goto error2;
 	}
 
 	for (itr = 0; itr < user_params->nlayers; itr++) {
@@ -531,12 +549,18 @@ int prepare_ldpc_code(struct xsdfec_user_ldpc_code_params *user_params,
 	}
 
 	/* Prepare QC Table */
-	if (user_params->nqc >
-	    (XSDFEC_LDPC_QC_TABLE_ADDR_HIGH - XSDFEC_LDPC_QC_TABLE_ADDR_BASE)) {
+	if (LDPC_TABLE_DATA_SIZE * user_params->nqc > XSDFEC_QC_TABLE_DEPTH) {
 		fprintf(stderr,
-			"%s : LA Table entries for code %d exceeds reg space\n",
+			"%s : QC Table entries for code %d exceeds reg space\n",
 			__func__, code_id);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error2;
+	}
+	/* Allocate a memory for QC table */
+	len = LDPC_TABLE_DATA_SIZE * user_params->nqc;
+	if (posix_memalign((void **)&ldpc_params->qc_table, psize, len)) {
+		ret = -EINVAL;
+		goto error2;
 	}
 
 	for (itr = 0; itr < user_params->nqc; itr++) {
@@ -545,6 +569,30 @@ int prepare_ldpc_code(struct xsdfec_user_ldpc_code_params *user_params,
 
 	ldpc_params->code_id = code_id;
 	return 0;
+
+error2:
+	return ret;
+}
+
+/**
+ * xsdfec_calculate_shared_ldpc_table_entry_size - Calculates shared code
+ * table sizes.
+ * @ldpc: Pointer to the LPDC Code Parameters
+ * @table_sizes: Pointer to structure containing the calculated table sizes
+ *
+ * Calculates the size of shared LDPC code tables used for a specified LPDC code
+ * parameters.
+ */
+inline void xsdfec_calculate_shared_ldpc_table_entry_size(
+	struct xsdfec_ldpc_params *ldpc,
+	struct xsdfec_ldpc_param_table_sizes *table_sizes)
+{
+	/* Calculate the sc_size in 32 bit words */
+	table_sizes->sc_size = (ldpc->nlayers + 3) >> 2;
+	/* Calculate the la_size in 128 bit words */
+	table_sizes->la_size = ((ldpc->nlayers << 2) + 15) >> 4;
+	/* Calculate the qc_size in 128 bit words */
+	table_sizes->qc_size = ((ldpc->nqc << 2) + 15) >> 4;
 }
 
 int update_lpdc_table_offsets(
@@ -567,8 +615,8 @@ int get_sc_table_size(struct xsdfec_user_ldpc_code_params *user_params)
 	int sc_table_size;
 	int rem;
 
-	rem = (user_params->nlayers) % 4;
-	sc_table_size = (user_params->nlayers) % 4;
+	rem = (user_params->nlayers) % LDPC_TABLE_DATA_SIZE;
+	sc_table_size = (user_params->nlayers) / LDPC_TABLE_DATA_SIZE;
 	if (rem != 0) {
 		sc_table_size++;
 	}
