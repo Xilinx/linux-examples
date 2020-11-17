@@ -258,51 +258,6 @@ int main(void)
 			 FEC_ENC);
 		goto close_devices;
 	}
-
-	/* Reset */
-	tstb_gpio_reset(GPIO_RESET_ID);
-
-	/* Set default configuration */
-	ret_val = set_default_config_xsdfec(dec_fd);
-	if (ret_val != 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Failed to set default configuration on dev %s",
-			 FEC_DEC);
-		goto close_devices;
-	}
-
-	ret_val = set_default_config_xsdfec(enc_fd);
-	if (ret_val != 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Failed to set default configuration on dev %s",
-			 FEC_ENC);
-		goto close_devices;
-	}
-
-	irq.enable_isr = false;
-	irq.enable_ecc_isr = false;
-
-	/* Disable decoder interrupts */
-	ret_val = set_irq_xsdfec(dec_fd, &irq);
-	if (ret_val != 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Failed to set irq on dev %s",
-			 FEC_DEC);
-		goto close_devices;
-	}
-	/* Disable encoder interrupts */
-	ret_val = set_irq_xsdfec(enc_fd, &irq);
-	if (ret_val != 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Failed to set irq on dev %s",
-			 FEC_ENC);
-		goto close_devices;
-	}
-
 close_devices:
 	/* Close FEC encoder */
 	(void)close_xsdfec(enc_fd);
