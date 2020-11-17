@@ -62,13 +62,12 @@
 
 
 /* Constants used to access devices other than the sd-fec */
-#define BUS_NAME             "platform"
-#define DATA_DEV_NAME        "a0000000.data_source_top"
-#define STATS_DEV_NAME       "a0030000.stats_top"
-#define ENC_IP_MON_DEV_NAME  "a0010000.monitor"
-#define ENC_OP_MON_DEV_NAME  "a0020000.monitor"
-#define DEC_IP_MON_DEV_NAME  "a00d0000.monitor"
-#define DEC_OP_MON_DEV_NAME  "a00e0000.monitor"
+#define DATA_DEV_BASEADDR        0xa0000000UL
+#define STATS_DEV_BASEADDR       0xa0030000UL
+#define ENC_IP_MON_DEV_BASEADDR  0xa0010000UL
+#define ENC_OP_MON_DEV_BASEADDR  0xa0020000UL
+#define DEC_IP_MON_DEV_BASEADDR  0xa00d0000UL
+#define DEC_OP_MON_DEV_BASEADDR  0xa00e0000UL
 #define GPIO_RESET_ID        "499"
 #define GPIO_LED0_ID         "507"
 #define GPIO_LED1_ID         "508"

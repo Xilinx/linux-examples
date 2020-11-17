@@ -50,12 +50,6 @@ extern "C" {
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stddef.h>
-#include <metal/sys.h>
-#include <metal/io.h>
-#include <metal/irq.h>
-#include <metal/atomic.h>
-#include <metal/cpu.h>
-#include <metal/device.h>
 #endif
 #include "xdata_source_top_hw.h"
 
@@ -67,9 +61,9 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 typedef struct {
-    /* This is a base io region that mimics a base address */
-    struct metal_io_region *Cntrl_BaseAddress;
-    struct metal_device *Cntrl_DevicePtr;
+    int mem_fd;
+    void *Cntrl_BaseAddress;
+    u32 BaseAddr;
     u32 IsReady;
 } XData_source_top;
 #else
@@ -93,9 +87,9 @@ typedef struct {
     Xil_In32((BaseAddress) + (RegOffset))
 #else
 #define XData_source_top_WriteReg(BaseAddress, RegOffset, Data) \
-    metal_io_write32((BaseAddress), (RegOffset), (Data))
+    *((volatile u32 *)(BaseAddress + RegOffset)) = Data;
 #define XData_source_top_ReadReg(BaseAddress, RegOffset) \
-    metal_io_read32((BaseAddress), (RegOffset))
+    (*(volatile u32 *)(BaseAddress + RegOffset))
 
 
 #define Xil_AssertVoid(expr)    assert(expr)
@@ -105,6 +99,7 @@ typedef struct {
 #define XST_DEVICE_NOT_FOUND    2
 #define XST_OPEN_DEVICE_FAILED  3
 #define XIL_COMPONENT_IS_READY  1
+#define MAP_SIZE                4096UL
 
 #endif
 
@@ -114,7 +109,7 @@ int XData_source_top_Initialize(XData_source_top *InstancePtr, u16 DeviceId);
 XData_source_top_Config* XData_source_top_LookupConfig(u16 DeviceId);
 int XData_source_top_CfgInitialize(XData_source_top *InstancePtr, XData_source_top_Config *ConfigPtr);
 #else
-int XData_source_top_Initialize(XData_source_top *InstancePtr, char* BusName, char* DeviceName);
+int XData_source_top_Initialize(XData_source_top *InstancePtr, u32 BaseAddress);
 int XData_source_top_Release(XData_source_top *InstancePtr);
 #endif
 

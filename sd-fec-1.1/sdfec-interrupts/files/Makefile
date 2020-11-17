@@ -18,7 +18,7 @@ APP_OBJS += usr_params.o
 APP_OBJS += sdfec_usr_intf.o
 
 CFLAGS += -std=gnu99
-LDLIBS = -lm -lmetal
+LDLIBS = -lm
 
 all: build
 

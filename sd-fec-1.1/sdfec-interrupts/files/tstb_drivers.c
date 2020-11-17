@@ -41,7 +41,7 @@ int tstb_data_source_initialize(XData_source_top* data_source_top)
 {
 	int ret;
 	ret = XData_source_top_Initialize(data_source_top,
-					  BUS_NAME, DATA_DEV_NAME);
+					  DATA_DEV_BASEADDR);
 
 	return ret;
 }
@@ -164,17 +164,13 @@ int tstb_monitors_initialize(struct tstb_monitors_t* mons)
 	int ret = 0;
 
 	ret_enc_ip = XMonitor_Initialize(&(mons->enc_ip),
-					 BUS_NAME,
-					 ENC_IP_MON_DEV_NAME);
+					 ENC_IP_MON_DEV_BASEADDR);
 	ret_enc_op = XMonitor_Initialize(&(mons->enc_op),
-					 BUS_NAME,
-					 ENC_OP_MON_DEV_NAME);
+					 ENC_OP_MON_DEV_BASEADDR);
 	ret_dec_ip = XMonitor_Initialize(&(mons->dec_ip),
-					 BUS_NAME,
-					 DEC_IP_MON_DEV_NAME);
+					 DEC_IP_MON_DEV_BASEADDR);
 	ret_dec_op = XMonitor_Initialize(&(mons->dec_op),
-					 BUS_NAME,
-					 DEC_OP_MON_DEV_NAME);
+					 DEC_OP_MON_DEV_BASEADDR);
 
 	if (ret_enc_ip < 0 || ret_enc_op < 0 ||
 	    ret_dec_ip < 0 || ret_dec_op < 0) {
@@ -212,7 +208,7 @@ int tstb_stats_initialize(XStats_top* stats_top)
 {
 	int ret;
 
-	ret = XStats_top_Initialize(stats_top, BUS_NAME, STATS_DEV_NAME);
+	ret = XStats_top_Initialize(stats_top, STATS_DEV_BASEADDR);
 
 	return ret;
 }

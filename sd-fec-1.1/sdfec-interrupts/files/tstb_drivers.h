@@ -49,13 +49,12 @@
 /*************************** Constant Definitions *****************************/
 /* Constants used to access devices other than the sd-fec */
 #define NUM_LDPC_CODES		(3UL)
-#define BUS_NAME		"platform"
-#define DATA_DEV_NAME		"a0000000.data_source_top"
-#define STATS_DEV_NAME		"a0030000.stats_top"
-#define ENC_IP_MON_DEV_NAME	"a0010000.monitor"
-#define ENC_OP_MON_DEV_NAME	"a0020000.monitor"
-#define DEC_IP_MON_DEV_NAME	"a00d0000.monitor"
-#define DEC_OP_MON_DEV_NAME	"a00e0000.monitor"
+#define DATA_DEV_BASEADDR		0xa0000000
+#define STATS_DEV_BASEADDR		0xa0030000
+#define ENC_IP_MON_DEV_BASEADDR		0xa0010000
+#define ENC_OP_MON_DEV_BASEADDR		0xa0020000
+#define DEC_IP_MON_DEV_BASEADDR		0xa00d0000
+#define DEC_OP_MON_DEV_BASEADDR		0xa00e0000
 #define GPIO_RESET_ID		"499"
 #define GPIO_LED0_ID		"507"
 #define GPIO_LED1_ID		"508"

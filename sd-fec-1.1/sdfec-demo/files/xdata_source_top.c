@@ -42,27 +42,28 @@ int XData_source_top_CfgInitialize(XData_source_top *InstancePtr, XData_source_t
 }
 #else
 
-int XData_source_top_Initialize(XData_source_top *InstancePtr, char* BusName, char* DeviceName) {
-    int Result = -1;
-
+int XData_source_top_Initialize(XData_source_top *InstancePtr, u32 BaseAddr) {
     assert(InstancePtr != NULL);
 
-    /* Open shared memory device */
-    Result = metal_device_open(BusName, DeviceName, &(InstancePtr->Cntrl_DevicePtr));
-    if (Result < 0) {
-        printf("%s(): Open device failed\n", __func__);
-        return Result;
+    /* open /dev/mem descriptor for mapping the base address */
+    if ((InstancePtr->mem_fd = open("/dev/mem", O_RDWR)) < 0) {
+        printf("can't open /dev/mem on baseaddr: %x\n", BaseAddr);
+        return XST_OPEN_DEVICE_FAILED;
     }
 
-    /* Get shared memory device IO region */
-    InstancePtr->Cntrl_BaseAddress = metal_device_io_region(InstancePtr->Cntrl_DevicePtr, 0);
-    assert(InstancePtr->Cntrl_BaseAddress);
-    if (InstancePtr->Cntrl_BaseAddress == NULL) {
-        printf("%s(): Get shared memory device IO region failed\n", __func__);
+    /* memory map page size from the base address */
+    InstancePtr->Cntrl_BaseAddress = mmap(NULL, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+        InstancePtr->mem_fd, BaseAddr);
+    if (InstancePtr->Cntrl_BaseAddress == MAP_FAILED) {
+        printf("register mmap error on baseaddr: %x\n", BaseAddr);
+        close(InstancePtr->mem_fd);
+        return XST_OPEN_DEVICE_FAILED;
     }
 
     InstancePtr->IsReady = XIL_COMPONENT_IS_READY;
 
+    InstancePtr->BaseAddr = BaseAddr;
+    printf("OPEN mem map: %x\n", InstancePtr->BaseAddr);
     return XST_SUCCESS;
 }
 
@@ -71,7 +72,10 @@ int XData_source_top_Release(XData_source_top *InstancePtr) {
     assert(InstancePtr != NULL);
     assert(InstancePtr->IsReady == XIL_COMPONENT_IS_READY);
 
-    metal_device_close(InstancePtr->Cntrl_DevicePtr);
+    /* unmap mapped memory and close the descriptor */
+    munmap(InstancePtr->Cntrl_BaseAddress, MAP_SIZE);
+    close(InstancePtr->mem_fd);
+    printf("CLOSE mem map: %x\n", InstancePtr->BaseAddr);
 
     return XST_SUCCESS;
 }

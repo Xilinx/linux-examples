@@ -43,7 +43,6 @@ int main(void)
 
 	XData_source_top data_source_top;
 
-	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 	struct xsdfec_status status;
 	struct xsdfec_stats  stats;
 	struct xsdfec_irq    irq;
@@ -70,7 +69,6 @@ int main(void)
 			 GPIO_RESET_ID);
 		goto check_error;
 	}
-	metal_init(&metal_param);
 	ret_val = tstb_data_source_initialize(&data_source_top);
 	if (ret_val < 0) {
 		snprintf(err_msg,

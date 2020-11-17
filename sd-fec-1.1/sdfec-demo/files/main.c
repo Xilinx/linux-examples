@@ -51,7 +51,6 @@ int main(void)
 	XStats_top        stats_top;
 	struct demo_monitors_t mons;
 
-	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 	struct xsdfec_user_ldpc_table_offsets  dec_user_offsets;
 	struct xsdfec_user_ldpc_table_offsets  enc_user_offsets;
 	struct xsdfec_ldpc_params              dec_ldpc_params;
@@ -75,7 +74,6 @@ int main(void)
 	demo_gpio_initialize(GPIO_LED0_ID);
 	demo_gpio_initialize(GPIO_LED1_ID);
 
-	metal_init(&metal_param);
 	ret_val = demo_data_source_initialize(&data_source_top);
 	if (ret_val < 0) {
 		printf("Failed to initialize data source block\n");

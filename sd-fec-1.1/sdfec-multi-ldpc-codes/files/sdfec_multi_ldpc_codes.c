@@ -52,7 +52,6 @@ int main(void)
 	XStats_top             stats_top;
 	struct tstb_monitors_t mons;
 
-	struct metal_init_params metal_param = METAL_INIT_DEFAULTS;
 	struct xsdfec_user_ldpc_table_offsets dec_user_offsets;
 	struct xsdfec_user_ldpc_table_offsets enc_user_offsets;
 	struct xsdfec_ldpc_params             dec_ldpc_params;
@@ -77,7 +76,6 @@ int main(void)
 			 GPIO_RESET_ID);
 		goto check_error;
 	}
-	metal_init(&metal_param);
 	ret_val = tstb_data_source_initialize(&data_source_top);
 	if (ret_val < 0) {
 		snprintf(err_msg,

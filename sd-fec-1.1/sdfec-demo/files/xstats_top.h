@@ -50,12 +50,6 @@ extern "C" {
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stddef.h>
-#include <metal/sys.h>
-#include <metal/io.h>
-#include <metal/irq.h>
-#include <metal/atomic.h>
-#include <metal/cpu.h>
-#include <metal/device.h>
 #endif
 #include "xstats_top_hw.h"
 
@@ -67,8 +61,9 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 typedef struct {
-    struct metal_io_region *Cntrl_BaseAddress;
-    struct metal_device *Cntrl_DevicePtr;
+    int mem_fd;
+    void *Cntrl_BaseAddress;
+    u32 BaseAddr;
     u32 IsReady;
 } XStats_top;
 #else
@@ -98,9 +93,9 @@ typedef struct {
     Xil_In32((BaseAddress) + (RegOffset))
 #else
 #define XStats_top_WriteReg(BaseAddress, RegOffset, Data) \
-    metal_io_write32((BaseAddress), (RegOffset), (Data))
+    *((volatile u32 *)(BaseAddress + RegOffset)) = Data;
 #define XStats_top_ReadReg(BaseAddress, RegOffset) \
-    metal_io_read32((BaseAddress), (RegOffset))
+    (*(volatile u32 *)(BaseAddress + RegOffset))
 
 #define Xil_AssertVoid(expr)    assert(expr)
 #define Xil_AssertNonvoid(expr) assert(expr)
@@ -109,6 +104,8 @@ typedef struct {
 #define XST_DEVICE_NOT_FOUND    2
 #define XST_OPEN_DEVICE_FAILED  3
 #define XIL_COMPONENT_IS_READY  1
+#define MAP_SIZE                4096UL
+
 #endif
 
 /************************** Function Prototypes *****************************/
@@ -117,7 +114,7 @@ int XStats_top_Initialize(XStats_top *InstancePtr, u16 DeviceId);
 XStats_top_Config* XStats_top_LookupConfig(u16 DeviceId);
 int XStats_top_CfgInitialize(XStats_top *InstancePtr, XStats_top_Config *ConfigPtr);
 #else
-int XStats_top_Initialize(XStats_top *InstancePtr, char* BusName, char* DeviceName);
+int XStats_top_Initialize(XStats_top *InstancePtr, u32 BaseAddress);
 int XStats_top_Release(XStats_top *InstancePtr);
 #endif
 

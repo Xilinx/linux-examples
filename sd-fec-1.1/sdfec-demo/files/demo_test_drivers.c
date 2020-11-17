@@ -38,7 +38,7 @@
 //      o tkeep indicates bytes
 int  demo_data_source_initialize(XData_source_top* data_source_top)
 {
-	return XData_source_top_Initialize(data_source_top, BUS_NAME, DATA_DEV_NAME);
+	return XData_source_top_Initialize(data_source_top, DATA_DEV_BASEADDR);
 }
 
 u64 demo_data_source_calc_keep(unsigned int packet_size,
@@ -144,24 +144,20 @@ int demo_monitors_initialize(struct demo_monitors_t* mons)
 	int ret_val = 0;
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->enc_ip),
-		                              BUS_NAME,
-		                              ENC_IP_MON_DEV_NAME);
+		                              ENC_IP_MON_DEV_BASEADDR);
 	}
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->enc_op),
-		                              BUS_NAME,
-		                              ENC_OP_MON_DEV_NAME);
+		                              ENC_OP_MON_DEV_BASEADDR);
 	}
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->dec_ip),
-		                              BUS_NAME,
-		                              DEC_IP_MON_DEV_NAME);
+		                              DEC_IP_MON_DEV_BASEADDR);
 	}
 
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->dec_op),
-		                              BUS_NAME,
-		                              DEC_OP_MON_DEV_NAME);
+		                              DEC_OP_MON_DEV_BASEADDR);
 	}
 
 	return ret_val;
@@ -194,7 +190,7 @@ void demo_monitors_release(struct demo_monitors_t* mons)
 
 int demo_stats_initialize(XStats_top* stats_top)
 {
-	return XStats_top_Initialize(stats_top, BUS_NAME, STATS_DEV_NAME);
+	return XStats_top_Initialize(stats_top, STATS_DEV_BASEADDR);
 }
 
 // Helper function to determine the mask for the stats block to apply to the
