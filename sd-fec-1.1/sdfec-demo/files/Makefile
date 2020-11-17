@@ -4,11 +4,8 @@ APP = sdfec-demo
 # Add any other object files to this list below
 APP_OBJS =
 APP_OBJS += xdata_source_top.o
-APP_OBJS += xdata_source_top_sinit.o
 APP_OBJS += xmonitor.o
-APP_OBJS += xmonitor_sinit.o
 APP_OBJS += xstats_top.o
-APP_OBJS += xstats_top_sinit.o
 APP_OBJS += demo_test_drivers.o
 APP_OBJS += main.o
 APP_OBJS += xsd_fec_dec_docsis_long_params.o

@@ -34,12 +34,6 @@ extern "C" {
 #endif
 
 /***************************** Include Files *********************************/
-#ifndef __linux__
-#include "xil_types.h"
-#include "xil_assert.h"
-#include "xstatus.h"
-#include "xil_io.h"
-#else
 #include <stdint.h>
 #include <assert.h>
 #include <dirent.h>
@@ -50,11 +44,9 @@ extern "C" {
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stddef.h>
-#endif
 #include "xmonitor_hw.h"
 
 /**************************** Type Definitions ******************************/
-#ifdef __linux__
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -66,26 +58,8 @@ typedef struct {
     u32 BaseAddr;
     u32 IsReady;
 } XMonitor;
-#else
-typedef struct {
-    u16 DeviceId;
-    u32 Cntrl_BaseAddress;
-} XMonitor_Config;
-
-typedef struct {
-    u32 Cntrl_BaseAddress;
-    u32 IsReady;
-} XMonitor;
-#endif
-
 
 /***************** Macros (Inline Functions) Definitions *********************/
-#ifndef __linux__
-#define XMonitor_WriteReg(BaseAddress, RegOffset, Data) \
-    Xil_Out32((BaseAddress) + (RegOffset), (u32)(Data))
-#define XMonitor_ReadReg(BaseAddress, RegOffset) \
-    Xil_In32((BaseAddress) + (RegOffset))
-#else
 #define XMonitor_WriteReg(BaseAddress, RegOffset, Data) \
     *((volatile u32 *)(BaseAddress + RegOffset)) = Data;
 #define XMonitor_ReadReg(BaseAddress, RegOffset) \
@@ -100,17 +74,9 @@ typedef struct {
 #define XIL_COMPONENT_IS_READY  1
 #define MAP_SIZE                4096UL
 
-#endif
-
 /************************** Function Prototypes *****************************/
-#ifndef __linux__
-int XMonitor_Initialize(XMonitor *InstancePtr, u16 DeviceId);
-XMonitor_Config* XMonitor_LookupConfig(u16 DeviceId);
-int XMonitor_CfgInitialize(XMonitor *InstancePtr, XMonitor_Config *ConfigPtr);
-#else
 int XMonitor_Initialize(XMonitor *InstancePtr, u32 BaseAddress);
 int XMonitor_Release(XMonitor *InstancePtr);
-#endif
 
 void XMonitor_Start(XMonitor *InstancePtr);
 u32 XMonitor_IsDone(XMonitor *InstancePtr);

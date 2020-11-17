@@ -30,17 +30,6 @@
 #include "xdata_source_top.h"
 
 /************************** Function Implementation *************************/
-#ifndef __linux__
-int XData_source_top_CfgInitialize(XData_source_top *InstancePtr, XData_source_top_Config *ConfigPtr) {
-    Xil_AssertNonvoid(InstancePtr != NULL);
-    Xil_AssertNonvoid(ConfigPtr != NULL);
-
-    InstancePtr->Cntrl_BaseAddress = ConfigPtr->Cntrl_BaseAddress;
-    InstancePtr->IsReady = XIL_COMPONENT_IS_READY;
-
-    return XST_SUCCESS;
-}
-#else
 
 int XData_source_top_Initialize(XData_source_top *InstancePtr, u32 BaseAddr) {
     assert(InstancePtr != NULL);
@@ -79,9 +68,6 @@ int XData_source_top_Release(XData_source_top *InstancePtr) {
 
     return XST_SUCCESS;
 }
-
-#endif
-
 
 void XData_source_top_Start(XData_source_top *InstancePtr) {
     u32 Data;

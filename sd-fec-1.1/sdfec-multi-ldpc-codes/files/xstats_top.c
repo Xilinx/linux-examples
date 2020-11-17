@@ -30,17 +30,6 @@
 #include "xstats_top.h"
 
 /************************** Function Implementation *************************/
-#ifndef __linux__
-int XStats_top_CfgInitialize(XStats_top *InstancePtr, XStats_top_Config *ConfigPtr) {
-    Xil_AssertNonvoid(InstancePtr != NULL);
-    Xil_AssertNonvoid(ConfigPtr != NULL);
-
-    InstancePtr->Cntrl_BaseAddress = ConfigPtr->Cntrl_BaseAddress;
-    InstancePtr->IsReady = XIL_COMPONENT_IS_READY;
-
-    return XST_SUCCESS;
-}
-#else
 int XStats_top_Initialize(XStats_top *InstancePtr, u32 BaseAddr) {
     assert(InstancePtr != NULL);
 
@@ -77,7 +66,6 @@ int XStats_top_Release(XStats_top *InstancePtr) {
 
     return XST_SUCCESS;
 }
-#endif
 
 void XStats_top_Start(XStats_top *InstancePtr) {
     u32 Data;

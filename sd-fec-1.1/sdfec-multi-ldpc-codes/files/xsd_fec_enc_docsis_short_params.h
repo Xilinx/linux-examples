@@ -2,11 +2,7 @@
 #ifndef XSD_FEC_ENC_DOCSIS_SHORT_PARAMS_H
 #define XSD_FEC_ENC_DOCSIS_SHORT_PARAMS_H
 
-#ifndef __linux__
-#include "xsdfec.h"
-#else
 #include "sdfec_usr_intf.h"
-#endif
 
 typedef struct xsdfec_user_ldpc_code_params user_params;
 

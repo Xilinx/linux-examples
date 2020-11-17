@@ -30,17 +30,6 @@
 #include "xmonitor.h"
 
 /************************** Function Implementation *************************/
-#ifndef __linux__
-int XMonitor_CfgInitialize(XMonitor *InstancePtr, XMonitor_Config *ConfigPtr) {
-    Xil_AssertNonvoid(InstancePtr != NULL);
-    Xil_AssertNonvoid(ConfigPtr != NULL);
-
-    InstancePtr->Cntrl_BaseAddress = ConfigPtr->Cntrl_BaseAddress;
-    InstancePtr->IsReady = XIL_COMPONENT_IS_READY;
-
-    return XST_SUCCESS;
-}
-#else
 int XMonitor_Initialize(XMonitor *InstancePtr, u32 BaseAddr) {
     assert(InstancePtr != NULL);
 
@@ -77,7 +66,6 @@ int XMonitor_Release(XMonitor *InstancePtr) {
 
     return XST_SUCCESS;
 }
-#endif
 
 void XMonitor_Start(XMonitor *InstancePtr) {
     u32 Data;

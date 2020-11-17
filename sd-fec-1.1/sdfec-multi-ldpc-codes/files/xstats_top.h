@@ -34,12 +34,6 @@ extern "C" {
 #endif
 
 /***************************** Include Files *********************************/
-#ifndef __linux__
-#include "xil_types.h"
-#include "xil_assert.h"
-#include "xstatus.h"
-#include "xil_io.h"
-#else
 #include <stdint.h>
 #include <assert.h>
 #include <dirent.h>
@@ -50,11 +44,9 @@ extern "C" {
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stddef.h>
-#endif
 #include "xstats_top_hw.h"
 
 /**************************** Type Definitions ******************************/
-#ifdef __linux__
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -66,17 +58,6 @@ typedef struct {
     u32 BaseAddr;
     u32 IsReady;
 } XStats_top;
-#else
-typedef struct {
-    u16 DeviceId;
-    u32 Cntrl_BaseAddress;
-} XStats_top_Config;
-
-typedef struct {
-    u32 Cntrl_BaseAddress;
-    u32 IsReady;
-} XStats_top;
-#endif
 
 typedef struct {
     u32 word_0;
@@ -86,12 +67,6 @@ typedef struct {
 } XStats_top_Mask_v;
 
 /***************** Macros (Inline Functions) Definitions *********************/
-#ifndef __linux__
-#define XStats_top_WriteReg(BaseAddress, RegOffset, Data) \
-    Xil_Out32((BaseAddress) + (RegOffset), (u32)(Data))
-#define XStats_top_ReadReg(BaseAddress, RegOffset) \
-    Xil_In32((BaseAddress) + (RegOffset))
-#else
 #define XStats_top_WriteReg(BaseAddress, RegOffset, Data) \
     *((volatile u32 *)(BaseAddress + RegOffset)) = Data;
 #define XStats_top_ReadReg(BaseAddress, RegOffset) \
@@ -106,17 +81,9 @@ typedef struct {
 #define XIL_COMPONENT_IS_READY  1
 #define MAP_SIZE                4096UL
 
-#endif
-
 /************************** Function Prototypes *****************************/
-#ifndef __linux__
-int XStats_top_Initialize(XStats_top *InstancePtr, u16 DeviceId);
-XStats_top_Config* XStats_top_LookupConfig(u16 DeviceId);
-int XStats_top_CfgInitialize(XStats_top *InstancePtr, XStats_top_Config *ConfigPtr);
-#else
 int XStats_top_Initialize(XStats_top *InstancePtr, u32 BaseAddress);
 int XStats_top_Release(XStats_top *InstancePtr);
-#endif
 
 void XStats_top_Start(XStats_top *InstancePtr);
 u32 XStats_top_IsDone(XStats_top *InstancePtr);

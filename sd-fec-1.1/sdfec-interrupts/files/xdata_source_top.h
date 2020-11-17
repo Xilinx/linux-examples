@@ -34,12 +34,6 @@ extern "C" {
 #endif
 
 /***************************** Include Files *********************************/
-#ifndef __linux__
-#include "xil_types.h"
-#include "xil_assert.h"
-#include "xstatus.h"
-#include "xil_io.h"
-#else
 #include <stdint.h>
 #include <assert.h>
 #include <dirent.h>
@@ -50,11 +44,9 @@ extern "C" {
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stddef.h>
-#endif
 #include "xdata_source_top_hw.h"
 
 /**************************** Type Definitions ******************************/
-#ifdef __linux__
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -66,26 +58,8 @@ typedef struct {
     u32 BaseAddr;
     u32 IsReady;
 } XData_source_top;
-#else
-typedef struct {
-    u16 DeviceId;
-    u32 Cntrl_BaseAddress;
-} XData_source_top_Config;
-
-typedef struct {
-    u32 Cntrl_BaseAddress;
-    u32 IsReady;
-} XData_source_top;
-#endif
-
 
 /***************** Macros (Inline Functions) Definitions *********************/
-#ifndef __linux__
-#define XData_source_top_WriteReg(BaseAddress, RegOffset, Data) \
-    Xil_Out32((BaseAddress) + (RegOffset), (u32)(Data))
-#define XData_source_top_ReadReg(BaseAddress, RegOffset) \
-    Xil_In32((BaseAddress) + (RegOffset))
-#else
 #define XData_source_top_WriteReg(BaseAddress, RegOffset, Data) \
     *((volatile u32 *)(BaseAddress + RegOffset)) = Data;
 #define XData_source_top_ReadReg(BaseAddress, RegOffset) \
@@ -101,17 +75,9 @@ typedef struct {
 #define XIL_COMPONENT_IS_READY  1
 #define MAP_SIZE                4096UL
 
-#endif
-
 /************************** Function Prototypes *****************************/
-#ifndef __linux__
-int XData_source_top_Initialize(XData_source_top *InstancePtr, u16 DeviceId);
-XData_source_top_Config* XData_source_top_LookupConfig(u16 DeviceId);
-int XData_source_top_CfgInitialize(XData_source_top *InstancePtr, XData_source_top_Config *ConfigPtr);
-#else
 int XData_source_top_Initialize(XData_source_top *InstancePtr, u32 BaseAddress);
 int XData_source_top_Release(XData_source_top *InstancePtr);
-#endif
 
 void XData_source_top_Start(XData_source_top *InstancePtr);
 u32 XData_source_top_IsDone(XData_source_top *InstancePtr);
