@@ -583,7 +583,7 @@ error2:
  * Calculates the size of shared LDPC code tables used for a specified LPDC code
  * parameters.
  */
-inline void xsdfec_calculate_shared_ldpc_table_entry_size(
+static inline void xsdfec_calculate_shared_ldpc_table_entry_size(
 	struct xsdfec_ldpc_params *ldpc,
 	struct xsdfec_ldpc_param_table_sizes *table_sizes)
 {
