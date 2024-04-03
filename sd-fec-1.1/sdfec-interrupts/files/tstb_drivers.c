@@ -341,85 +341,69 @@ void tstb_stats_release(XStats_top* stats_top)
 	XStats_top_Release(stats_top);
 }
 
-int tstb_gpio_initialize(char* gpioid)
+int gpio_find_chipname(const char *line_name)
 {
-	int expfd  = -1;
-	int dirfd  = -1;
-	char gpio_dirpath[50];
-	ssize_t unused __attribute__((unused));
+	struct gpiod_chip *chip;
+	struct gpiod_line *line;
+	int idx;
 
-	expfd = open("/sys/class/gpio/export", O_WRONLY);
-	if (expfd < 0) {
-		printf("Cannot open GPIO to export it\n");
-		return expfd;
+	for(idx = 0; idx < MAX_GPIOCHIP_ID; idx++) {
+		chip = gpiod_chip_open_by_number(idx);
+		if (!chip) {
+			continue;
+		}
+
+		line = gpiod_chip_find_line(chip, line_name);
+		if (line) {
+			printf("GPIO line %s is found on gpiochip id=%d\n", line_name, idx);
+			gpiod_chip_close(chip);
+			return idx;
+		}
+		gpiod_chip_close(chip);
 	}
-
-	unused = write(expfd, gpioid, 4);
-
-	/* Update the direction of the GPIO to be an output */
-	sprintf(gpio_dirpath, "/sys/class/gpio/gpio%s/direction", gpioid);
-	dirfd = open(gpio_dirpath, O_RDWR);
-	if (dirfd < 0) {
-		return dirfd;
-	}
-
-	unused = write(dirfd, "out", 4);
-
-	close(dirfd);
-	close(expfd);
-	return 0;
+	return -1;
 }
 
-void tstb_gpio_release(char* gpioid)
+int gpio_write_value(int chipnumber, const char *name, char val)
 {
-	int unexpfd  = -1;
-	ssize_t unused __attribute__((unused));
+	struct gpiod_chip *chip;
+	struct gpiod_line *line;
+	int ret;
 
-	unexpfd = open("/sys/class/gpio/unexport", O_WRONLY);
-	if (unexpfd < 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Cannot open GPIO to unexport it");
+	chip = gpiod_chip_open_by_number(chipnumber);
+	if (!chip) {
+		printf("Open chip failed\n");
+		ret = -1;
+		return ret;
 	}
 
-	unused = write(unexpfd, gpioid, 4);
-
-	close(unexpfd);
-}
-
-void tstb_gpio_reset(char* gpioid)
-{
-	int valfd = -1;
-	char gpio_valpath[50];
-	ssize_t unused __attribute__((unused));
-
-	sprintf(gpio_valpath, "/sys/class/gpio/gpio%s/value", gpioid);
-	valfd = open(gpio_valpath, O_RDWR);
-	if (valfd < 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Cannot open GPIO value %s",
-			 gpioid);
+	line = gpiod_chip_find_line(chip, name);
+	if (!line) {
+		printf("Get line %s failed\n", name);
+		ret = -1;
+		goto close_chip;
 	}
-	unused = write(valfd, "1", 2);
-	unused = write(valfd, "0", 2);
-	close(valfd);
-}
 
-void tstb_gpio_write_value(char* gpioid, char* val)
-{
-	int valfd = -1;
-	char gpio_valpath[50];
-
-	sprintf(gpio_valpath, "/sys/class/gpio/gpiochip%s/value", gpioid);
-	valfd = open(gpio_valpath, O_RDWR);
-	if (valfd < 0) {
-		printf("Cannot open GPIO value\n");
-		exit(1);
+	ret = gpiod_line_request_output(line, CONSUMER, 0);
+	if (ret < 0) {
+		printf("Request line as output failed\n");
+		goto release_line;
 	}
-	if(-1 == write(valfd, val, 2))
-		printf("Write failed in %s line %d\n", __FUNCTION__, __LINE__);
-	close(valfd);
+
+	ret = gpiod_line_set_value(line, val);
+	if (ret < 0) {
+		printf("Set line output failed\n");
+		ret = -1;
+		goto release_line;
+	}
+
+release_line:
+	gpiod_line_release(line);
+
+close_chip:
+	gpiod_chip_close(chip);
+
+	return ret;
 }
 
 int load_ldpc_code(int fd,

@@ -46,6 +46,8 @@ int main(void)
 	int valid_config_params = 0;
 
 	unsigned int code_id = 0;
+	int gpiochip_num_leds;
+	int gpiochip_num_reset;
 
 	XData_source_top  data_source_top;
 	XStats_top        stats_top;
@@ -68,12 +70,23 @@ int main(void)
 	struct demo_stats_t  stats;
 
 	printf("Initialize all devices\n");
-	// GPIO Reset
-	demo_gpio_initialize(GPIO_RESET_ID);
-	// GPIO LEDs
-	demo_gpio_initialize(GPIO_LED0_ID);
-	demo_gpio_initialize(GPIO_LED1_ID);
+	gpiochip_num_reset = gpio_find_chipname(GPIO_PIN_RESET);
+	if (gpiochip_num_reset < 0) {
+		printf("Failed to find gpiochip for reset line\n");
+		exit(1);
+	}
 
+	gpiochip_num_leds = gpio_find_chipname(GPIO_PIN_LED0);
+	if (gpiochip_num_leds < 0) {
+		printf("Failed to find gpiochip for led lines\n");
+		exit(1);
+	}
+
+	ret_val = gpio_write_value(gpiochip_num_reset, GPIO_PIN_RESET, 0);
+	if (ret_val < 0) {
+		printf("Failed on RESET gpio ");
+		exit(1);
+	}
 	ret_val = demo_data_source_initialize(&data_source_top);
 	if (ret_val < 0) {
 		printf("Failed to initialize data source block\n");
@@ -91,7 +104,7 @@ int main(void)
 	}
 
 	// All LEDs off
-	demo_gpio_write_value(GPIO_LED0_ID, "0");
+	gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED0, 0);
 
 	printf("Open FECs\n");
 	dec_fd = open_xsdfec(FEC_DEC);
@@ -107,7 +120,7 @@ int main(void)
 	}
 
 	// LED0 on only
-	demo_gpio_write_value(GPIO_LED0_ID, "1");
+	gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED0, 1);
 
 	// Fixed SD-FEC & tests parameters
 	// Example design require in-order outputs.
@@ -115,7 +128,7 @@ int main(void)
 	set_order_xsdfec(enc_fd, XSDFEC_MAINTAIN_ORDER);
 	demo_data_source_set_fec_type(&data_source_top);
 	do {
-		demo_gpio_write_value(GPIO_LED1_ID, "0");
+		gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED1, 0);
 		if (params.code != prev_params.code) {
 			printf("Setup LDPC code for decoder\n");
 			ret_val = prepare_ldpc_code(dec_codes[params.code],
@@ -178,8 +191,8 @@ int main(void)
 			demo_monitors_setup(&mons, &params);
 		}
 		// LED1 on only
-		demo_gpio_write_value(GPIO_LED0_ID, "0");
-		demo_gpio_write_value(GPIO_LED1_ID, "1");
+		gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED0, 0);
+		gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED1, 1);
 
 		// Start data source and stats
 		demo_monitors_start(&mons);
@@ -193,8 +206,8 @@ int main(void)
 		demo_stats_collect(&stats_top, &mons, &stats);
 
 		// All LEDs on
-		demo_gpio_write_value(GPIO_LED0_ID, "1");
-		demo_gpio_write_value(GPIO_LED1_ID, "1");
+		gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED0, 1);
+		gpio_write_value(gpiochip_num_leds, GPIO_PIN_LED1, 1);
 
 		// Print results
 		demo_stats_print(&stats);
@@ -240,13 +253,6 @@ release_monitors:
 	demo_monitors_release(&mons);
 	demo_stats_release(&stats_top);
 	demo_data_source_release(&data_source_top);
-
-	// GPIO LEDs
-	demo_gpio_release(GPIO_LED1_ID);
-	demo_gpio_release(GPIO_LED0_ID);
-
-	// GPIO Reset
-	demo_gpio_release(GPIO_RESET_ID);
 
 	return 0;
 }

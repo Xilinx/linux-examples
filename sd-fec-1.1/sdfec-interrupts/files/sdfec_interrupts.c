@@ -40,6 +40,7 @@ int main(void)
 	int enc_fd  = -1;
 	int dec_fd  = -1;
 	unsigned int code_id = 2;
+	int gpiochip_num_reset;
 
 	XData_source_top data_source_top;
 
@@ -60,13 +61,15 @@ int main(void)
 
 	struct tstb_params_t params = { code_id, 100, 6, 8, 0, 2, 0, 0 };
 
-	/* Initialize all devices */
-	ret_val = tstb_gpio_initialize(GPIO_RESET_ID);
+	printf("Initialize all devices\n");
+	gpiochip_num_reset = gpio_find_chipname(GPIO_PIN_RESET);
+	if (gpiochip_num_reset < 0) {
+		printf("Failed to find gpiochip for reset line\n");
+		exit(1);
+	}
+	ret_val = gpio_write_value(gpiochip_num_reset, GPIO_PIN_RESET, 0);
 	if (ret_val < 0) {
-		snprintf(err_msg,
-			 MAX_ERR_MSG_SIZE,
-			 "Failed to initialize gpio dev %s",
-			 GPIO_RESET_ID);
+		snprintf(err_msg, MAX_ERR_MSG_SIZE, "Failed on RESET gpio ");
 		goto check_error;
 	}
 	ret_val = tstb_data_source_initialize(&data_source_top);
@@ -267,7 +270,6 @@ close_devices:
 release_data_source:
 	/* Release data source */
 	tstb_data_source_release(&data_source_top);
-	tstb_gpio_release(GPIO_RESET_ID);
 
 check_error:
 	/* Check for errors */

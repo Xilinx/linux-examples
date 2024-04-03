@@ -525,80 +525,68 @@ void demo_stats_print(struct demo_stats_t* stats)
 		stats->dec_op_stalled);
 }
 
-void demo_gpio_initialize(char* gpioid)
+int gpio_find_chipname(const char *line_name)
 {
-	int expfd  = -1;
-	int dirfd  = -1;
-	char gpio_dirpath[50];
-	ssize_t unused __attribute__((unused));
+	struct gpiod_chip *chip;
+	struct gpiod_line *line;
+	int idx;
 
-	expfd = open("/sys/class/gpio/export", O_WRONLY);
-	if (expfd < 0) {
-		printf("Cannot open GPIO to export it\n");
-		exit(1);
+	for (idx = 0; idx < MAX_GPIOCHIP_ID; idx++) {
+		chip = gpiod_chip_open_by_number(idx);
+		if (!chip) {
+			continue;
+		}
+
+		line = gpiod_chip_find_line(chip, line_name);
+		if (line) {
+			printf("GPIO line %s is found on gpiochip id=%d\n",
+			       line_name, idx);
+			gpiod_chip_close(chip);
+			return idx;
+		}
+		gpiod_chip_close(chip);
 	}
-
-	unused = write(expfd, gpioid, 4);
-
-	// Update the direction of the GPIO to be an output
-	sprintf(gpio_dirpath, "/sys/class/gpio/gpio%s/direction", gpioid);
-	dirfd = open(gpio_dirpath, O_RDWR);
-	if (dirfd < 0) {
-		printf("Cannot open GPIO direction it\n");
-		exit(1);
-	}
-
-	unused = write(dirfd, "out", 4);
-
-	close(dirfd);
-	close(expfd);
+	return -1;
 }
 
-void demo_gpio_release(char* gpioid)
+int gpio_write_value(int chipnumber, const char *name, char val)
 {
-	int unexpfd  = -1;
-	ssize_t unused __attribute__((unused));
+	struct gpiod_chip *chip;
+	struct gpiod_line *line;
+	int ret;
 
-	unexpfd = open("/sys/class/gpio/unexport", O_WRONLY);
-	if (unexpfd < 0) {
-		printf("Cannot open GPIO to unexport it\n");
-		exit(1);
+	chip = gpiod_chip_open_by_number(chipnumber);
+	if (!chip) {
+		printf("Open chip failed\n");
+		ret = -1;
+		return ret;
 	}
 
-	unused = write(unexpfd, gpioid, 4);
-
-	close(unexpfd);
-}
-
-void demo_gpio_reset(char* gpioid)
-{
-	int valfd = -1;
-	char gpio_valpath[50];
-	ssize_t unused __attribute__((unused));
-
-	sprintf(gpio_valpath, "/sys/class/gpio/gpio%s/value", gpioid);
-	valfd = open(gpio_valpath, O_RDWR);
-	if (valfd < 0) {
-		printf("Cannot open GPIO value\n");
-		exit(1);
+	line = gpiod_chip_find_line(chip, name);
+	if (!line) {
+		printf("Get line %s failed\n", name);
+		ret = -1;
+		goto close_chip;
 	}
-	unused = write(valfd, "1", 2);
-	unused = write(valfd, "0", 2);
-	close(valfd);
-}
 
-void demo_gpio_write_value(char* gpioid, char* val)
-{
-	int valfd = -1;
-	char gpio_valpath[50];
-	ssize_t unused __attribute__((unused));
-
-	sprintf(gpio_valpath, "/sys/class/gpio/gpio%s/value", gpioid);
-	valfd = open(gpio_valpath, O_RDWR);
-	if (valfd < 0) {
-		printf("Cannot open GPIO value\n");
-		exit(1);
+	ret = gpiod_line_request_output(line, CONSUMER, 0);
+	if (ret < 0) {
+		printf("Request line as output failed\n");
+		goto release_line;
 	}
-	unused = write(valfd, val, 2);
-	close(valfd);
+
+	ret = gpiod_line_set_value(line, val);
+	if (ret < 0) {
+		printf("Set line output failed\n");
+		ret = -1;
+		goto release_line;
+	}
+
+release_line:
+	gpiod_line_release(line);
+
+close_chip:
+	gpiod_chip_close(chip);
+
+	return ret;
 }

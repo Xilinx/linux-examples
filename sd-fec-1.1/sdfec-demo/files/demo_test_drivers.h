@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <linux/input.h>
+#include <gpiod.h>
 
 #include "xdata_source_top.h"
 #include "xstats_top.h"
@@ -68,9 +69,14 @@
 #define ENC_OP_MON_DEV_BASEADDR  0xa0020000UL
 #define DEC_IP_MON_DEV_BASEADDR  0xa00d0000UL
 #define DEC_OP_MON_DEV_BASEADDR  0xa00e0000UL
-#define GPIO_RESET_ID        "499"
-#define GPIO_LED0_ID         "507"
-#define GPIO_LED1_ID         "508"
+#define MAX_GPIOCHIP_ID 20
+#define GPIO_PIN_LED0 "LED0"
+#define GPIO_PIN_LED1 "LED1"
+#define GPIO_PIN_RESET "RESET"
+
+#ifndef CONSUMER
+#define CONSUMER "Consumer"
+#endif
 
 /*************************** Type Definitions *********************************/
 // Parameter struct
@@ -171,10 +177,7 @@ int demo_params_changed(struct demo_params_t* params,
 
 void demo_stats_print(struct demo_stats_t* stats);
 
-void demo_gpio_initialize(char* gpioid);
+int gpio_write_value(int chipnumber, const char *name, char val);
 
-void demo_gpio_release(char* gpioid);
+int gpio_find_chipname(const char *line_name);
 
-void demo_gpio_reset(char* gpioid);
-
-void demo_gpio_write_value(char* gpioid, char* val);

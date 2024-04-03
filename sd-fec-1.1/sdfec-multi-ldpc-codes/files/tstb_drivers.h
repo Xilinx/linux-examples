@@ -40,6 +40,7 @@
 #include <linux/input.h>
 #include <ctype.h>
 #include <poll.h>
+#include <gpiod.h>
 
 #include "usr_params.h"
 #include "xdata_source_top.h"
@@ -55,9 +56,12 @@
 #define ENC_OP_MON_DEV_BASEADDR		0xa0020000
 #define DEC_IP_MON_DEV_BASEADDR		0xa00d0000
 #define DEC_OP_MON_DEV_BASEADDR		0xa00e0000
-#define GPIO_RESET_ID		"499"
-#define GPIO_LED0_ID		"507"
-#define GPIO_LED1_ID		"508"
+#define MAX_GPIOCHIP_ID      20
+#define GPIO_PIN_RESET       "RESET"
+
+#ifndef	CONSUMER
+#define	CONSUMER	"Consumer"
+#endif
 
 /*************************** Type Definitions *********************************/
 /* Parameter struct */
@@ -151,13 +155,9 @@ void tstb_stats_print(struct tstb_stats_t* stats);
 
 void tstb_stats_release(XStats_top* stats_top);
 
-int tstb_gpio_initialize(char* gpioid);
+int gpio_write_value(int chipnumber, const char *name, char val);
 
-void tstb_gpio_release(char* gpioid);
-
-void tstb_gpio_reset(char* gpioid);
-
-void tstb_gpio_write_value(char* gpioid, char* val);
+int gpio_find_chipname(const char *line_name);
 
 int load_ldpc_code(int fd,
 		   user_params* code,
