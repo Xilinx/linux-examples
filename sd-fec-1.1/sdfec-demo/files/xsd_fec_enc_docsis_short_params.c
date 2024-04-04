@@ -1,3 +1,8 @@
+/******************************************************************************
+* Copyright (C) 2016-2022 Xilinx, Inc. All rights reserved.
+* Copyright (C) 2022-2024 Advanced Micro Devices, Inc. All rights reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
 #include "xsd_fec_enc_docsis_short_params.h"
 
 u32 xsd_fec_enc_docsis_short_sc_table_size = 2;
