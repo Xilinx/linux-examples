@@ -1,6 +1,6 @@
 /******************************************************************************
 * Copyright (C) 2016-2022 Xilinx, Inc. All rights reserved.
-* Copyright (C) 2022-2024 Advanced Micro Devices, Inc. All rights reserved.
+* Copyright (C) 2022-2025 Advanced Micro Devices, Inc. All rights reserved.
 * SPDX-License-Identifier: MIT
 ******************************************************************************/
 #ifndef _TSTB_DRIVERS_H_
@@ -34,7 +34,6 @@
 #define ENC_OP_MON_DEV_BASEADDR		0xa0020000
 #define DEC_IP_MON_DEV_BASEADDR		0xa00d0000
 #define DEC_OP_MON_DEV_BASEADDR		0xa00e0000
-#define MAX_GPIOCHIP_ID      20
 #define GPIO_PIN_RESET       "RESET"
 
 #ifndef	CONSUMER
@@ -133,9 +132,8 @@ void tstb_stats_print(struct tstb_stats_t* stats);
 
 void tstb_stats_release(XStats_top* stats_top);
 
-int gpio_write_value(int chipnumber, const char *name, char val);
+struct gpiod_line_request *request_output_line(struct gpiod_chip *chip, unsigned int offset, enum gpiod_line_value value);
 
-int gpio_find_chipname(const char *line_name);
 
 int load_ldpc_code(int fd,
 		   user_params* code,

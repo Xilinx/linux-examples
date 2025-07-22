@@ -1,6 +1,6 @@
 /******************************************************************************
 * Copyright (C) 2016-2022 Xilinx, Inc. All rights reserved.
-* Copyright (C) 2022-2024 Advanced Micro Devices, Inc. All rights reserved.
+* Copyright (C) 2022-2025 Advanced Micro Devices, Inc. All rights reserved.
 * SPDX-License-Identifier: MIT
 ******************************************************************************/
 /****************************** Include Files *********************************/
@@ -318,69 +318,40 @@ void tstb_stats_release(XStats_top* stats_top)
 	XStats_top_Release(stats_top);
 }
 
-int gpio_find_chipname(const char *line_name)
+struct gpiod_line_request *request_output_line(struct gpiod_chip *chip, unsigned int offset, enum gpiod_line_value value)
 {
-	struct gpiod_chip *chip;
-	struct gpiod_line *line;
-	int idx;
-
-	for(idx = 0; idx < MAX_GPIOCHIP_ID; idx++) {
-		chip = gpiod_chip_open_by_number(idx);
-		if (!chip) {
-			continue;
-		}
-
-		line = gpiod_chip_find_line(chip, line_name);
-		if (line) {
-			printf("GPIO line %s is found on gpiochip id=%d\n", line_name, idx);
-			gpiod_chip_close(chip);
-			return idx;
-		}
-		gpiod_chip_close(chip);
-	}
-	return -1;
-}
-
-int gpio_write_value(int chipnumber, const char *name, char val)
-{
-	struct gpiod_chip *chip;
-	struct gpiod_line *line;
+	struct gpiod_request_config *req_cfg = NULL;
+	struct gpiod_line_request *request = NULL;
+	struct gpiod_line_settings *settings;
+	struct gpiod_line_config *line_cfg;
 	int ret;
 
-	chip = gpiod_chip_open_by_number(chipnumber);
-	if (!chip) {
-		printf("Open chip failed\n");
-		ret = -1;
-		return ret;
-	}
+	settings = gpiod_line_settings_new();
+	if (!settings)
+		return NULL;
 
-	line = gpiod_chip_find_line(chip, name);
-	if (!line) {
-		printf("Get line %s failed\n", name);
-		ret = -1;
-		goto close_chip;
-	}
+	gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_OUTPUT);
+	gpiod_line_settings_set_output_value(settings, value);
 
-	ret = gpiod_line_request_output(line, CONSUMER, 0);
-	if (ret < 0) {
-		printf("Request line as output failed\n");
-		goto release_line;
-	}
+	line_cfg = gpiod_line_config_new();
+	if (!line_cfg)
+		goto free_settings;
 
-	ret = gpiod_line_set_value(line, val);
-	if (ret < 0) {
-		printf("Set line output failed\n");
-		ret = -1;
-		goto release_line;
-	}
+	ret = gpiod_line_config_add_line_settings(line_cfg, &offset, 1, settings);
+	if (ret)
+		goto free_line_config;
 
-release_line:
-	gpiod_line_release(line);
+	request = gpiod_chip_request_lines(chip, req_cfg, line_cfg);
 
-close_chip:
-	gpiod_chip_close(chip);
+	gpiod_request_config_free(req_cfg);
 
-	return ret;
+free_line_config:
+	gpiod_line_config_free(line_cfg);
+
+free_settings:
+	gpiod_line_settings_free(settings);
+
+	return request;
 }
 
 int load_ldpc_code(int fd,

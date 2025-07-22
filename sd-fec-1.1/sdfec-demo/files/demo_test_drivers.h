@@ -1,6 +1,6 @@
 /******************************************************************************
 * Copyright (C) 2016-2022 Xilinx, Inc. All rights reserved.
-* Copyright (C) 2022-2024 Advanced Micro Devices, Inc. All rights reserved.
+* Copyright (C) 2022-2025 Advanced Micro Devices, Inc. All rights reserved.
 * SPDX-License-Identifier: MIT
 ******************************************************************************/
 /****************************** Include Files *********************************/
@@ -45,7 +45,6 @@
 #define ENC_OP_MON_DEV_BASEADDR  0xa0020000UL
 #define DEC_IP_MON_DEV_BASEADDR  0xa00d0000UL
 #define DEC_OP_MON_DEV_BASEADDR  0xa00e0000UL
-#define MAX_GPIOCHIP_ID 20
 #define GPIO_PIN_LED0 "LED0"
 #define GPIO_PIN_LED1 "LED1"
 #define GPIO_PIN_RESET "RESET"
@@ -153,7 +152,4 @@ int demo_params_changed(struct demo_params_t* params,
 
 void demo_stats_print(struct demo_stats_t* stats);
 
-int gpio_write_value(int chipnumber, const char *name, char val);
-
-int gpio_find_chipname(const char *line_name);
-
+struct gpiod_line_request *request_output_line(struct gpiod_chip *chip, unsigned int offset, enum gpiod_line_value value);

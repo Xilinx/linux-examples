@@ -1,16 +1,18 @@
 /******************************************************************************
 * Copyright (C) 2016-2022 Xilinx, Inc. All rights reserved.
-* Copyright (C) 2022-2024 Advanced Micro Devices, Inc. All rights reserved.
+* Copyright (C) 2022-2025 Advanced Micro Devices, Inc. All rights reserved.
 * SPDX-License-Identifier: MIT
 ******************************************************************************/
 /****************************** Include Files *********************************/
 #include "tstb_drivers.h"
 #include "sdfec_usr_intf.h"
 
+#define MAX_LINE_LEN 512
 
 void xsdfec_calculate_shared_ldpc_table_entry_size(
 	struct xsdfec_ldpc_params *ldpc,
 	struct xsdfec_ldpc_param_table_sizes *table_sizes);
+struct gpiod_line_request *find_chip_params(char *const line_name, int *offset, struct gpiod_chip *chip);
 
 int main(void)
 {
@@ -18,7 +20,6 @@ int main(void)
 	int enc_fd  = -1;
 	int dec_fd  = -1;
 	unsigned int code_id = 2;
-	int gpiochip_num_reset;
 
 	XData_source_top data_source_top;
 
@@ -40,16 +41,18 @@ int main(void)
 	struct tstb_params_t params = { code_id, 100, 6, 8, 0, 2, 0, 0 };
 
 	printf("Initialize all devices\n");
-	gpiochip_num_reset = gpio_find_chipname(GPIO_PIN_RESET);
-	if (gpiochip_num_reset < 0) {
-		printf("Failed to find gpiochip for reset line\n");
+	int offset_reset;
+	struct gpiod_line_request *request_reset;
+	struct gpiod_chip *chip_reset = NULL;
+
+	request_reset = find_chip_params(GPIO_PIN_RESET, &offset_reset, chip_reset);
+	if (request_reset == NULL) {
+		printf("find_chip_params() couldn't find RESET gpio\n");
 		exit(1);
 	}
-	ret_val = gpio_write_value(gpiochip_num_reset, GPIO_PIN_RESET, 0);
-	if (ret_val < 0) {
-		snprintf(err_msg, MAX_ERR_MSG_SIZE, "Failed on RESET gpio ");
-		goto check_error;
-	}
+
+	gpiod_line_request_set_value(request_reset, offset_reset, GPIOD_LINE_VALUE_INACTIVE);
+
 	ret_val = tstb_data_source_initialize(&data_source_top);
 	if (ret_val < 0) {
 		snprintf(err_msg,
@@ -250,6 +253,7 @@ release_data_source:
 	tstb_data_source_release(&data_source_top);
 
 check_error:
+	gpiod_chip_close(chip_reset);
 	/* Check for errors */
 	if(strcmp(err_msg, "") != 0) {
 		printf("ERROR: %s\n", err_msg);
@@ -259,4 +263,93 @@ check_error:
 
 	printf("\nsdfec-interrupts: PASS\n");
 	return 0;
+}
+
+static int chip_dir_filter(const struct dirent *entry)
+{
+	struct stat sb;
+	int ret = 0;
+	char *path;
+
+	if (asprintf(&path, "/dev/%s", entry->d_name) < 0)
+		return 0;
+
+	if ((lstat(path, &sb) == 0) && (!S_ISLNK(sb.st_mode)) &&
+	    gpiod_is_gpiochip_device(path))
+		ret = 1;
+
+	free(path);
+
+	return ret;
+}
+
+static int all_chip_paths(char ***paths_ptr)
+{
+	int i, j, num_chips, ret = 0;
+	struct dirent **entries;
+	char **paths;
+
+	num_chips = scandir("/dev/", &entries, chip_dir_filter, alphasort);
+	if (num_chips < 0)
+		return 0;
+
+	paths = calloc(num_chips, sizeof(*paths));
+	if (!paths)
+		return 0;
+
+	for (i = 0; i < num_chips; i++) {
+		if (asprintf(&paths[i], "/dev/%s", entries[i]->d_name) < 0) {
+			for (j = 0; j < i; j++)
+				free(paths[j]);
+
+			free(paths);
+			return 0;
+		}
+	}
+
+	*paths_ptr = paths;
+	ret = num_chips;
+
+	for (i = 0; i < num_chips; i++)
+		free(entries[i]);
+
+	free(entries);
+	return ret;
+}
+
+struct gpiod_line_request *find_chip_params(char *const line_name, int *offset, struct gpiod_chip *chip)
+{
+	/* Example configuration - customize to suit your situation. */
+	struct gpiod_chip_info *cinfo;
+	int i, num_chips;
+	char **chip_paths;
+	struct gpiod_line_request *request;
+	/*
+	 * Names are not guaranteed unique, so this finds the first line with
+	 * the given name.
+	 */
+	num_chips = all_chip_paths(&chip_paths);
+	for (i = 0; i < num_chips; i++) {
+		chip = gpiod_chip_open(chip_paths[i]);
+		if (!chip)
+			continue;
+
+		*offset = gpiod_chip_get_line_offset_from_name(chip, line_name);
+		if (*offset == -1)
+			goto close_chip;
+
+		cinfo = gpiod_chip_get_info(chip);
+		if (!cinfo)
+			goto close_chip;
+
+		printf("%s: %s %d\n", line_name, gpiod_chip_info_get_name(cinfo), *offset);
+		request = request_output_line(chip, *offset, GPIOD_LINE_VALUE_INACTIVE);
+		return request;
+
+close_chip:
+		gpiod_chip_close(chip);
+	}
+
+	printf("line '%s' not found\n", line_name);
+	return NULL;
 }
