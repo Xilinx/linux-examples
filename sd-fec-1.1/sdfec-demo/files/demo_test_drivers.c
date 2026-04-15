@@ -13,9 +13,10 @@
 // design
 //      o Determined in S/W to simplify H/W
 //      o tkeep indicates bytes
-int  demo_data_source_initialize(XData_source_top* data_source_top)
+int  demo_data_source_initialize(XData_source_top* data_source_top,
+				 struct sdfec_config *cfg)
 {
-	return XData_source_top_Initialize(data_source_top, DATA_DEV_BASEADDR);
+	return XData_source_top_Initialize(data_source_top, cfg->data_dev_baseaddr);
 }
 
 u64 demo_data_source_calc_keep(unsigned int packet_size,
@@ -116,25 +117,26 @@ void demo_data_source_release(XData_source_top* data_source_top)
 	XData_source_top_Release(data_source_top);
 }
 
-int demo_monitors_initialize(struct demo_monitors_t* mons)
+int demo_monitors_initialize(struct demo_monitors_t* mons,
+			     struct sdfec_config *cfg)
 {
 	int ret_val = 0;
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->enc_ip),
-		                              ENC_IP_MON_DEV_BASEADDR);
+		                              cfg->enc_ip_mon_dev_baseaddr);
 	}
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->enc_op),
-		                              ENC_OP_MON_DEV_BASEADDR);
+		                              cfg->enc_op_mon_dev_baseaddr);
 	}
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->dec_ip),
-		                              DEC_IP_MON_DEV_BASEADDR);
+		                              cfg->dec_ip_mon_dev_baseaddr);
 	}
 
 	if (ret_val == 0) {
 		ret_val = XMonitor_Initialize(&(mons->dec_op),
-		                              DEC_OP_MON_DEV_BASEADDR);
+		                              cfg->dec_op_mon_dev_baseaddr);
 	}
 
 	return ret_val;
@@ -165,9 +167,10 @@ void demo_monitors_release(struct demo_monitors_t* mons)
 	XMonitor_Release(&(mons->enc_ip));
 }
 
-int demo_stats_initialize(XStats_top* stats_top)
+int demo_stats_initialize(XStats_top* stats_top,
+			  struct sdfec_config *cfg)
 {
-	return XStats_top_Initialize(stats_top, STATS_DEV_BASEADDR);
+	return XStats_top_Initialize(stats_top, cfg->stats_dev_baseaddr);
 }
 
 // Helper function to determine the mask for the stats block to apply to the

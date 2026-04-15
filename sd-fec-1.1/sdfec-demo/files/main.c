@@ -9,15 +9,12 @@
 
 #define MAX_LINE_LEN 512
 
-#define FEC_DEC  "/dev/xsdfec0"
-#define FEC_ENC  "/dev/xsdfec1"
-
 void xsdfec_calculate_shared_ldpc_table_entry_size(
 	struct xsdfec_ldpc_params *ldpc,
 	struct xsdfec_ldpc_param_table_sizes *table_sizes);
 struct gpiod_line_request *find_chip_params(char *const line_name, int *offset, struct gpiod_chip *chip);
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	int ret_val = -1;
 	int enc_fd  = -1;
@@ -25,6 +22,15 @@ int main(void)
 	int valid_config_params = 0;
 
 	unsigned int code_id = 0;
+
+	struct sdfec_config cfg;
+	const char *config_path = (argc > 1) ? argv[1] : SDFEC_DEFAULT_CONFIG;
+
+	ret_val = sdfec_config_load(&cfg, config_path);
+	if (ret_val < 0) {
+		printf("Failed to load config file: %s\n", config_path);
+		exit(1);
+	}
 
 	XData_source_top  data_source_top;
 	XStats_top        stats_top;
@@ -53,19 +59,19 @@ int main(void)
 	struct gpiod_chip *chip_reset = NULL;
 
 	printf("Initialize all devices\n");
-	request_led0 = find_chip_params(GPIO_PIN_LED0, &offset_led0, chip_led0);
+	request_led0 = find_chip_params(cfg.gpio_pin_led0, &offset_led0, chip_led0);
 	if (request_led0 == NULL) {
 		printf("Failed find_chip_params() couldn't find LED0 gpios\n");
 		exit(1);
 	}
 
-	request_led1 = find_chip_params(GPIO_PIN_LED1, &offset_led1, chip_led1);
+	request_led1 = find_chip_params(cfg.gpio_pin_led1, &offset_led1, chip_led1);
 	if (request_led1 == NULL) {
 		printf("Failed find_chip_params() couldn't find LED1 gpios\n");
 		exit(1);
 	}
 
-	request_reset = find_chip_params(GPIO_PIN_RESET, &offset_reset, chip_reset);
+	request_reset = find_chip_params(cfg.gpio_pin_reset, &offset_reset, chip_reset);
 	if (request_reset == NULL) {
 		printf("find_chip_params() couldn't find RESET gpio\n");
 		exit(1);
@@ -73,17 +79,17 @@ int main(void)
 
 	gpiod_line_request_set_value(request_reset, offset_reset, GPIOD_LINE_VALUE_INACTIVE);
 
-	ret_val = demo_data_source_initialize(&data_source_top);
+	ret_val = demo_data_source_initialize(&data_source_top, &cfg);
 	if (ret_val < 0) {
 		printf("Failed to initialize data source block\n");
 		exit(1);
 	}
-	ret_val = demo_stats_initialize(&stats_top);
+	ret_val = demo_stats_initialize(&stats_top, &cfg);
 	if (ret_val < 0) {
 		printf("Failed to initialize stats block\n");
 		exit(1);
 	}
-	ret_val = demo_monitors_initialize(&mons);
+	ret_val = demo_monitors_initialize(&mons, &cfg);
 	if (ret_val < 0) {
 		printf("Failed to initialize monitor blocks\n");
 		exit(1);
@@ -93,15 +99,15 @@ int main(void)
 	gpiod_line_request_set_value(request_led0, offset_led0, GPIOD_LINE_VALUE_INACTIVE);
 
 	printf("Open FECs\n");
-	dec_fd = open_xsdfec(FEC_DEC);
+	dec_fd = open_xsdfec(cfg.fec_dec);
 	if (dec_fd < 0) {
-		printf("Failed to open dev %s\n", FEC_DEC);
+		printf("Failed to open dev %s\n", cfg.fec_dec);
 		goto release_monitors;
 	}
 
-	enc_fd = open_xsdfec(FEC_ENC);
+	enc_fd = open_xsdfec(cfg.fec_enc);
 	if (enc_fd < 0) {
-		printf("Failed to open dev %s\n", FEC_ENC);
+		printf("Failed to open dev %s\n", cfg.fec_enc);
 		goto release_monitors;
 	}
 
@@ -201,14 +207,14 @@ int main(void)
 		printf("Stop encoder FEC\n");
 		ret_val = stop_xsdfec(enc_fd);
 		if (ret_val  != 0) {
-			printf("Failed to stop dev %s\n", FEC_ENC);
+			printf("Failed to stop dev %s\n", cfg.fec_enc);
 			goto close_devices;
 		}
 
 		printf("Stop decoder FEC\n");
 		ret_val = stop_xsdfec(dec_fd);
 		if (ret_val  != 0) {
-			printf("Failed to stop dev %s\n", FEC_DEC);
+			printf("Failed to stop dev %s\n", cfg.fec_dec);
 			goto close_devices;
 		}
 

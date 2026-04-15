@@ -17,8 +17,6 @@
 /* Constants used to access devices other than the sd-fec */
 #define NUM_LDPC_CODES		(3UL)
 #define MAX_ERR_MSG_SIZE	(256UL)
-#define FEC_DEC			"/dev/xsdfec0"
-#define FEC_ENC			"/dev/xsdfec1"
 
 /*************************** Macro Definitions ********************************/
 

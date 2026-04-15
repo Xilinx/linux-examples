@@ -18,6 +18,7 @@
 #include "xdata_source_top.h"
 #include "xstats_top.h"
 #include "xmonitor.h"
+#include "sdfec_config.h"
 
 /*************************** Constant Definitions *****************************/
 
@@ -36,18 +37,6 @@
  */
 #define USER_BOOLEAN_TRUE           (1UL)
 #define USER_BOOLEAN_FALSE          (0UL)
-
-
-/* Constants used to access devices other than the sd-fec */
-#define DATA_DEV_BASEADDR        0xa0000000UL
-#define STATS_DEV_BASEADDR       0xa0030000UL
-#define ENC_IP_MON_DEV_BASEADDR  0xa0010000UL
-#define ENC_OP_MON_DEV_BASEADDR  0xa0020000UL
-#define DEC_IP_MON_DEV_BASEADDR  0xa00d0000UL
-#define DEC_OP_MON_DEV_BASEADDR  0xa00e0000UL
-#define GPIO_PIN_LED0 "LED0"
-#define GPIO_PIN_LED1 "LED1"
-#define GPIO_PIN_RESET "RESET"
 
 /*************************** Type Definitions *********************************/
 // Parameter struct
@@ -94,7 +83,8 @@ struct demo_monitors_t {
 
 
 /*************************** Function Prototypes ******************************/
-int demo_data_source_initialize(XData_source_top* data_source_top);
+int demo_data_source_initialize(XData_source_top* data_source_top,
+				struct sdfec_config *cfg);
 
 u64 demo_data_source_calc_keep(unsigned int packet_size,
 			       unsigned int per_trans,
@@ -111,7 +101,8 @@ void demo_data_source_start(XData_source_top* data_source_top);
 
 void demo_data_source_release(XData_source_top* data_source_top);
 
-int demo_monitors_initialize(struct demo_monitors_t* mons);
+int demo_monitors_initialize(struct demo_monitors_t* mons,
+			     struct sdfec_config *cfg);
 
 void demo_monitors_setup(struct demo_monitors_t* mons,
 			 struct demo_params_t* params);
@@ -120,7 +111,8 @@ void demo_monitors_start(struct demo_monitors_t* mons);
 
 void demo_monitors_release(struct demo_monitors_t* mons);
 
-int demo_stats_initialize(XStats_top* stats_top);
+int demo_stats_initialize(XStats_top* stats_top,
+			  struct sdfec_config *cfg);
 
 XStats_top_Mask_v demo_stats_calc_mask(unsigned int k);
 
