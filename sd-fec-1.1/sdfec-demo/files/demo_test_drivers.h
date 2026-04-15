@@ -49,10 +49,6 @@
 #define GPIO_PIN_LED1 "LED1"
 #define GPIO_PIN_RESET "RESET"
 
-#ifndef CONSUMER
-#define CONSUMER "Consumer"
-#endif
-
 /*************************** Type Definitions *********************************/
 // Parameter struct
 struct demo_params_t {

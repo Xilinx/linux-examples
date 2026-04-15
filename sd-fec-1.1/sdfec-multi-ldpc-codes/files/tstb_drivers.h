@@ -36,10 +36,6 @@
 #define DEC_OP_MON_DEV_BASEADDR		0xa00e0000
 #define GPIO_PIN_RESET       "RESET"
 
-#ifndef	CONSUMER
-#define	CONSUMER	"Consumer"
-#endif
-
 /*************************** Type Definitions *********************************/
 /* Parameter struct */
 struct tstb_params_t {
