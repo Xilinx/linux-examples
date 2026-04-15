@@ -16,6 +16,7 @@ APP_OBJS += xsd_fec_enc_docsis_medium_params.o
 APP_OBJS += xsd_fec_enc_docsis_short_params.o
 APP_OBJS += usr_params.o
 APP_OBJS += sdfec_usr_intf.o
+APP_OBJS += sdfec_config.o
 
 CFLAGS += -std=gnu99
 LDLIBS = -lm -lgpiod

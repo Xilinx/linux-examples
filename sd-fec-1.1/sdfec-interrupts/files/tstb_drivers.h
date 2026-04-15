@@ -24,17 +24,11 @@
 #include "xdata_source_top.h"
 #include "xstats_top.h"
 #include "xmonitor.h"
+#include "sdfec_config.h"
 
 /*************************** Constant Definitions *****************************/
 /* Constants used to access devices other than the sd-fec */
 #define NUM_LDPC_CODES		(3UL)
-#define DATA_DEV_BASEADDR		0xa0000000
-#define STATS_DEV_BASEADDR		0xa0030000
-#define ENC_IP_MON_DEV_BASEADDR		0xa0010000
-#define ENC_OP_MON_DEV_BASEADDR		0xa0020000
-#define DEC_IP_MON_DEV_BASEADDR		0xa00d0000
-#define DEC_OP_MON_DEV_BASEADDR		0xa00e0000
-#define GPIO_PIN_RESET       "RESET"
 
 /*************************** Type Definitions *********************************/
 /* Parameter struct */
@@ -79,7 +73,8 @@ struct tstb_monitors_t {
 };
 
 /*************************** Function Prototypes ******************************/
-int tstb_data_source_initialize(XData_source_top* data_source_top);
+int tstb_data_source_initialize(XData_source_top* data_source_top,
+				struct sdfec_config *cfg);
 
 u64 tstb_data_source_calc_keep(unsigned int packet_size,
 			       unsigned int per_trans,
@@ -98,7 +93,8 @@ void tstb_data_source_start(XData_source_top* data_source_top);
 
 void tstb_data_source_release(XData_source_top* data_source_top);
 
-int tstb_monitors_initialize(struct tstb_monitors_t* mons);
+int tstb_monitors_initialize(struct tstb_monitors_t* mons,
+			     struct sdfec_config *cfg);
 
 void tstb_monitors_setup(struct tstb_monitors_t* mons,
 			 struct tstb_params_t* params);
@@ -107,7 +103,8 @@ void tstb_monitors_start(struct tstb_monitors_t* mons);
 
 void tstb_monitors_release(struct tstb_monitors_t* mons);
 
-int tstb_stats_initialize(XStats_top* stats_top);
+int tstb_stats_initialize(XStats_top* stats_top,
+			  struct sdfec_config *cfg);
 
 XStats_top_Mask_v tstb_stats_calc_mask(unsigned int k);
 

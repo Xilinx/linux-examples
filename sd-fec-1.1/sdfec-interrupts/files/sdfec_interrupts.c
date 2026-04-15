@@ -14,12 +14,21 @@ void xsdfec_calculate_shared_ldpc_table_entry_size(
 	struct xsdfec_ldpc_param_table_sizes *table_sizes);
 struct gpiod_line_request *find_chip_params(char *const line_name, int *offset, struct gpiod_chip *chip);
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	int ret_val = -1;
 	int enc_fd  = -1;
 	int dec_fd  = -1;
 	unsigned int code_id = 2;
+
+	struct sdfec_config cfg;
+	const char *config_path = (argc > 1) ? argv[1] : SDFEC_DEFAULT_CONFIG;
+
+	ret_val = sdfec_config_load(&cfg, config_path);
+	if (ret_val < 0) {
+		printf("Failed to load config file: %s\n", config_path);
+		exit(1);
+	}
 
 	XData_source_top data_source_top;
 
@@ -45,7 +54,7 @@ int main(void)
 	struct gpiod_line_request *request_reset;
 	struct gpiod_chip *chip_reset = NULL;
 
-	request_reset = find_chip_params(GPIO_PIN_RESET, &offset_reset, chip_reset);
+	request_reset = find_chip_params(cfg.gpio_pin_reset, &offset_reset, chip_reset);
 	if (request_reset == NULL) {
 		printf("find_chip_params() couldn't find RESET gpio\n");
 		exit(1);
@@ -53,7 +62,7 @@ int main(void)
 
 	gpiod_line_request_set_value(request_reset, offset_reset, GPIOD_LINE_VALUE_INACTIVE);
 
-	ret_val = tstb_data_source_initialize(&data_source_top);
+	ret_val = tstb_data_source_initialize(&data_source_top, &cfg);
 	if (ret_val < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
@@ -61,21 +70,21 @@ int main(void)
 		goto check_error;
 	}
 	/* Open FECs */
-	dec_fd = open_xsdfec(FEC_DEC);
+	dec_fd = open_xsdfec(cfg.fec_dec);
 	if (dec_fd < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to open dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto release_data_source;
 	}
 
-	enc_fd = open_xsdfec(FEC_ENC);
+	enc_fd = open_xsdfec(cfg.fec_enc);
 	if (enc_fd < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to open dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto release_data_source;
 	}
 
@@ -94,7 +103,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to prepare user ldpc code on dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
 
@@ -103,7 +112,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to add ldpc code on dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
 
@@ -116,7 +125,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to prepare user ldpc code on dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
 
@@ -125,7 +134,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to add ldpc code on dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
 
@@ -138,7 +147,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to set irq on dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
 	/* Enable encoder interrupts */
@@ -147,7 +156,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to set irq on dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
 
@@ -157,7 +166,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to start dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
 
@@ -167,7 +176,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to start dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
 
@@ -190,40 +199,40 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to get status on dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
-	print_status_xsdfec(&status, FEC_DEC);
+	print_status_xsdfec(&status, cfg.fec_dec);
 
 	ret_val = get_stats_xsdfec(dec_fd, &stats);
 	if (ret_val != 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to get stats on dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
-	print_stats_xsdfec(&stats, FEC_DEC);
+	print_stats_xsdfec(&stats, cfg.fec_dec);
 
 	ret_val = get_status_xsdfec(enc_fd, &status);
 	if (ret_val != 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to get status on dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
-	print_status_xsdfec(&status, FEC_ENC);
+	print_status_xsdfec(&status, cfg.fec_enc);
 
 	ret_val = get_stats_xsdfec(enc_fd, &stats);
 	if (ret_val != 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to get stats on dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
-	print_stats_xsdfec(&stats, FEC_ENC);
+	print_stats_xsdfec(&stats, cfg.fec_enc);
 
 	/* Clear the stats */
 	ret_val = clear_stats_xsdfec(dec_fd);
@@ -231,7 +240,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to clear stats on dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto close_devices;
 	}
 	ret_val = clear_stats_xsdfec(enc_fd);
@@ -239,7 +248,7 @@ int main(void)
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to clear stats on dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto close_devices;
 	}
 close_devices:
