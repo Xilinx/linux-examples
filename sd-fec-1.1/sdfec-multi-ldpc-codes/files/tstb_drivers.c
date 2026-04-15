@@ -14,11 +14,12 @@
  *      o Determined in S/W to simplify H/W
  *      o tkeep indicates bytes
  */
-int tstb_data_source_initialize(XData_source_top* data_source_top)
+int tstb_data_source_initialize(XData_source_top* data_source_top,
+				struct sdfec_config *cfg)
 {
 	int ret;
 	ret = XData_source_top_Initialize(data_source_top,
-					  DATA_DEV_BASEADDR);
+					  cfg->data_dev_baseaddr);
 
 	return ret;
 }
@@ -132,7 +133,8 @@ void tstb_data_source_release(XData_source_top* data_source_top)
 	XData_source_top_Release(data_source_top);
 }
 
-int tstb_monitors_initialize(struct tstb_monitors_t* mons)
+int tstb_monitors_initialize(struct tstb_monitors_t* mons,
+			     struct sdfec_config *cfg)
 {
 	int ret_enc_ip;
 	int ret_enc_op;
@@ -141,13 +143,13 @@ int tstb_monitors_initialize(struct tstb_monitors_t* mons)
 	int ret = 0;
 
 	ret_enc_ip = XMonitor_Initialize(&(mons->enc_ip),
-					 ENC_IP_MON_DEV_BASEADDR);
+					 cfg->enc_ip_mon_dev_baseaddr);
 	ret_enc_op = XMonitor_Initialize(&(mons->enc_op),
-					 ENC_OP_MON_DEV_BASEADDR);
+					 cfg->enc_op_mon_dev_baseaddr);
 	ret_dec_ip = XMonitor_Initialize(&(mons->dec_ip),
-					 DEC_IP_MON_DEV_BASEADDR);
+					 cfg->dec_ip_mon_dev_baseaddr);
 	ret_dec_op = XMonitor_Initialize(&(mons->dec_op),
-					 DEC_OP_MON_DEV_BASEADDR);
+					 cfg->dec_op_mon_dev_baseaddr);
 
 	if (ret_enc_ip < 0 || ret_enc_op < 0 ||
 	    ret_dec_ip < 0 || ret_dec_op < 0) {
@@ -181,11 +183,12 @@ void tstb_monitors_release(struct tstb_monitors_t* mons)
 	XMonitor_Release(&(mons->enc_ip));
 }
 
-int tstb_stats_initialize(XStats_top* stats_top)
+int tstb_stats_initialize(XStats_top* stats_top,
+			  struct sdfec_config *cfg)
 {
 	int ret;
 
-	ret = XStats_top_Initialize(stats_top, STATS_DEV_BASEADDR);
+	ret = XStats_top_Initialize(stats_top, cfg->stats_dev_baseaddr);
 
 	return ret;
 }

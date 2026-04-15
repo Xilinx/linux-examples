@@ -15,19 +15,29 @@ static void run_testbench(user_params* code,
 			  XData_source_top* data_source_top,
 			  XStats_top* stats_top,
 			  struct tstb_monitors_t* mons,
-			  unsigned int code_id);
+			  unsigned int code_id,
+			  struct sdfec_config* cfg);
 
 void xsdfec_calculate_shared_ldpc_table_entry_size(
 	struct xsdfec_ldpc_params *ldpc,
 	struct xsdfec_ldpc_param_table_sizes *table_sizes);
 struct gpiod_line_request *find_chip_params(char *const line_name, int *offset, struct gpiod_chip *chip);
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	int ret_val = -1;
 	int enc_fd  = -1;
 	int dec_fd  = -1;
 	unsigned int code_id = 0;
+
+	struct sdfec_config cfg;
+	const char *config_path = (argc > 1) ? argv[1] : SDFEC_DEFAULT_CONFIG;
+
+	ret_val = sdfec_config_load(&cfg, config_path);
+	if (ret_val < 0) {
+		printf("Failed to load config file: %s\n", config_path);
+		exit(1);
+	}
 
 	XData_source_top       data_source_top;
 	XStats_top             stats_top;
@@ -53,7 +63,7 @@ int main(void)
 	struct gpiod_line_request *request_reset;
 	struct gpiod_chip *chip_reset = NULL;
 
-	request_reset = find_chip_params(GPIO_PIN_RESET, &offset_reset, chip_reset);
+	request_reset = find_chip_params(cfg.gpio_pin_reset, &offset_reset, chip_reset);
 	if (request_reset == NULL) {
 		printf("find_chip_params() couldn't find RESET gpio\n");
 		exit(1);
@@ -61,21 +71,21 @@ int main(void)
 
 	gpiod_line_request_set_value(request_reset, offset_reset, GPIOD_LINE_VALUE_INACTIVE);
 
-	ret_val = tstb_data_source_initialize(&data_source_top);
+	ret_val = tstb_data_source_initialize(&data_source_top, &cfg);
 	if (ret_val < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to initialize data source block");
 		goto check_error;
 	}
-	ret_val = tstb_stats_initialize(&stats_top);
+	ret_val = tstb_stats_initialize(&stats_top, &cfg);
 	if (ret_val < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to initialize stats block");
 		goto check_error;
 	}
-	ret_val = tstb_monitors_initialize(&mons);
+	ret_val = tstb_monitors_initialize(&mons, &cfg);
 	if (ret_val < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
@@ -84,21 +94,21 @@ int main(void)
 	}
 
 	/* Open FECs */
-	dec_fd = open_xsdfec(FEC_DEC);
+	dec_fd = open_xsdfec(cfg.fec_dec);
 	if (dec_fd < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to open dev %s",
-			 FEC_DEC);
+			 cfg.fec_dec);
 		goto release_tstb_devices;
 	}
 
-	enc_fd = open_xsdfec(FEC_ENC);
+	enc_fd = open_xsdfec(cfg.fec_enc);
 	if (enc_fd < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to open dev %s",
-			 FEC_ENC);
+			 cfg.fec_enc);
 		goto release_tstb_devices;
 	}
 
@@ -116,7 +126,7 @@ int main(void)
 					 &dec_user_offsets,
 					 &dec_ldpc_params,
 					 code_id,
-					 FEC_DEC);
+					 cfg.fec_dec);
 		if (ret_val != 0) {
 			goto close_devices;
 		}
@@ -126,7 +136,7 @@ int main(void)
 					 &enc_user_offsets,
 					 &enc_ldpc_params,
 					 code_id,
-					 FEC_ENC);
+					 cfg.fec_enc);
 		if (ret_val != 0) {
 			goto close_devices;
 		}
@@ -138,7 +148,7 @@ int main(void)
 			snprintf(err_msg,
 				 MAX_ERR_MSG_SIZE,
 				 "Failed to start dev %s",
-				 FEC_DEC);
+				 cfg.fec_dec);
 			goto close_devices;
 		}
 
@@ -148,7 +158,7 @@ int main(void)
 			snprintf(err_msg,
 				 MAX_ERR_MSG_SIZE,
 				 "Failed to start dev %s",
-				 FEC_ENC);
+				 cfg.fec_enc);
 			goto close_devices;
 		}
 
@@ -159,7 +169,8 @@ int main(void)
 			      &data_source_top,
 			      &stats_top,
 			      &mons,
-			      code_id);
+			      code_id,
+			      &cfg);
 
 		/* Stop decoder FEC */
 		ret_val = stop_xsdfec(dec_fd);
@@ -167,7 +178,7 @@ int main(void)
 			snprintf(err_msg,
 				 MAX_ERR_MSG_SIZE,
 				 "Failed to stop dev %s",
-				 FEC_DEC);
+				 cfg.fec_dec);
 			goto close_devices;
 		}
 
@@ -177,7 +188,7 @@ int main(void)
 			snprintf(err_msg,
 				 MAX_ERR_MSG_SIZE,
 				 "Failed to stop dev %s",
-				 FEC_ENC);
+				 cfg.fec_enc);
 			goto close_devices;
 		}
 	}
@@ -213,7 +224,8 @@ static void run_testbench(user_params* dec_code,
 			  XData_source_top* data_source_top,
 			  XStats_top* stats_top,
 			  struct tstb_monitors_t* mons,
-			  unsigned int code_id) {
+			  unsigned int code_id,
+			  struct sdfec_config* cfg) {
 	int ret = -1;
 	unsigned int k;
 	unsigned int n;
@@ -235,19 +247,19 @@ static void run_testbench(user_params* dec_code,
 	tstb_stats_release(stats_top);
 	tstb_data_source_release(data_source_top);
 
-	ret = tstb_data_source_initialize(data_source_top);
+	ret = tstb_data_source_initialize(data_source_top, cfg);
 	if (ret < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to initialize data source block");
 	}
-	ret = tstb_stats_initialize(stats_top);
+	ret = tstb_stats_initialize(stats_top, cfg);
 	if (ret < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
 			 "Failed to initialize stats block");
 	}
-	ret = tstb_monitors_initialize(mons);
+	ret = tstb_monitors_initialize(mons, cfg);
 	if (ret < 0) {
 		snprintf(err_msg,
 			 MAX_ERR_MSG_SIZE,
